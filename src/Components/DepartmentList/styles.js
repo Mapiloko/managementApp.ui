@@ -2,7 +2,7 @@ import { makeStyles } from "@mui/styles";
 
 export const useStyles = makeStyles(() => ({
     divBorder: {
-        height:"16rem",
+        height:"10rem",
         width:"100%",
         border:"3.5px solid black",
         marginTop:"1rem",

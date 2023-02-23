@@ -71,3 +71,6 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.6); 
 }
+
+
+#employees .row:nth-child(odd){background-color: rgba(0, 0, 0, 0.3);}
