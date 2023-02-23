@@ -1,0 +1,73 @@
+.App {
+  text-align: center;
+}
+
+/* -------------------
+   variables
+ --------------------*/
+ :root{
+  --btn-primary: #31d98a;
+  --green: green;
+  --brown: #442c4e;
+  --deep-blue: #262e54;
+  --dark-green: #005a88;
+  --mild-green: #4894ba;
+  --aqua: #2ed5ff;
+  --white: #fff;
+  --black: #000;
+}
+
+
+
+.default-background {
+  color: white;
+  width: 100%;
+  height: 100vh;
+  background: transparent
+    linear-gradient(
+      120deg,
+      var(--green) 0%,
+      var(--brown) 28%,
+      var(--deep-blue) 44%,
+      var(--dark-green) 60%,
+      var(--mild-green) 80%,
+      var(--aqua) 100%
+    )
+    0% 0% no-repeat padding-box;
+  overflow: hidden;
+}
+
+.defaultB {
+  background: transparent
+    linear-gradient(
+      120deg,
+      var(--green) 0%,
+      var(--brown) 28%,
+      var(--deep-blue) 44%,
+      var(--dark-green) 60%,
+      var(--mild-green) 80%,
+      var(--aqua) 100%
+    )
+    0% 0% no-repeat padding-box;
+  overflow: hidden;
+}
+
+/* // SCROLL START */
+
+::-webkit-scrollbar {
+  width: 16px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey; 
+  border-radius: 10px;
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.4); 
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.6); 
+}
