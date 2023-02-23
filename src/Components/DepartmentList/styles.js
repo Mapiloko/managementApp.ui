@@ -2,11 +2,22 @@ import { makeStyles } from "@mui/styles";
 
 export const useStyles = makeStyles(() => ({
     divBorder: {
-        height:"10rem",
+        height:"11rem",
         width:"100%",
         border:"3.5px solid black",
         marginTop:"1rem",
         paddingLeft: "3rem"
+    },
+    divBorderStart: {
+        height:"11rem",
+        width:"100%",
+        border:"3.5px solid black",
+        marginTop:"1rem",
+    },
+    menuBtns: {
+        marginTop:"0.5rem",
+        marginLeft: "1rem",
+        marginRight: "1rem"
     },
     OverlapText: {
         width:"8rem",

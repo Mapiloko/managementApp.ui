@@ -37,9 +37,9 @@ const CustomButton = ({ handleClick, title, disabled, className, filter }) => {
   );
 };
 
-Button.defaultProps = {
-  filter: false,
-  disabled: false
-};
+// Button.defaultProps = {
+//   filter: false,
+//   disabled: false
+// };
 
 export default CustomButton;

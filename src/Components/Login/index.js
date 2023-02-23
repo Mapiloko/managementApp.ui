@@ -1,20 +1,23 @@
 import React, { useState } from "react";
 import { Grid, Typography } from "@mui/material";
 import CustomButton from "../CustomButton";
-
+import LoginStore from "../../utils/stores/LoginStore";
+import { useNavigate } from "react-router-dom";
 
 // import { useNavigate } from "react-router-dom";
 import { useStyles } from "./styles";
 
 
 const Login = () => {
+	const navigate = useNavigate();
+	LoginStore.next(false)
 	const classes = useStyles()
 	const [userName, setUsername] = useState("")
 	const [password, setPassword] = useState("")
 	const [wrongLogins, setWronglogins] = useState(false)
 
 	const handleClick = ()=>{
-		console.log("Clieckec")
+		navigate("/employees-list")
 	}
 
 	return (

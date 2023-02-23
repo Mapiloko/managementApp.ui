@@ -1,19 +1,44 @@
 import './App.css';
-// import Login from './Components/Login';
+import Login from './Components/Login';
 import Header from './Components/Header';
-import EmployeeList from './Components/EmployeeList';
+import EmployeeList, { dataLoader } from './Components/EmployeeList';
 import DepartmentList from './Components/DepartmentList';
 import EntityCreate from './Components/EntityCreation';
+import { createBrowserRouter, createRoutesFromElements, Route, Link, Outlet, RouterProvider } from 'react-router-dom';
 
-function App() {
+const Root = () =>{
+  return (
+    <>
+      {/* <Header/> */}
+      <Outlet/>
+    </>
+  )
+} 
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route path="/" element={<Root />}>
+      <Route index element={<Login/>} />
+      <Route path="employees-list" element={<EmployeeList/>} />
+      {/* <Route path="employees-list" element={<EmployeeList/>} loader={dataLoader} /> */}
+      <Route path="department-list" element={<DepartmentList/>} />
+      <Route path="/employee/:param" element={<EntityCreate/>} />
+      <Route path="/department/:param" element={<EntityCreate/>} />
+      <Route element={<Login/>} />
+    </Route>
+  ))
+
+export default function App() {
+
   return (
     <div className='default-background container-fluid'>
       <div className='container'>
-        <Header/>
-        <EntityCreate name="Employee"/>
+        {/* <Header/> */}
+        <RouterProvider router={router}/>
+        {/* <EntityCreate name="Employee"/> */}
       </div>
     </div>
   );
 }
 
-export default App;
+// export default App;
