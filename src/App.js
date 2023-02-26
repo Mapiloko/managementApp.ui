@@ -1,10 +1,10 @@
 import './App.css';
 import Login from './Components/Login';
-import Header from './Components/Header';
+// import Header from './Components/Header';
 import EmployeeList, { dataLoader } from './Components/EmployeeList';
 import DepartmentList from './Components/DepartmentList';
 import EntityCreate from './Components/EntityCreation';
-import { createBrowserRouter, createRoutesFromElements, Route, Link, Outlet, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, createRoutesFromElements, Route, Outlet, RouterProvider } from 'react-router-dom';
 
 const Root = () =>{
   return (
@@ -19,11 +19,10 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Root />}>
       <Route index element={<Login/>} />
-      <Route path="employees-list" element={<EmployeeList/>} />
-      {/* <Route path="employees-list" element={<EmployeeList/>} loader={dataLoader} /> */}
+      <Route path="employees-list" element={<EmployeeList/>} loader={dataLoader} />
       <Route path="department-list" element={<DepartmentList/>} />
-      <Route path="/employee/:param" element={<EntityCreate/>} />
-      <Route path="/department/:param" element={<EntityCreate/>} />
+      <Route path="/:category/:subCat" element={<EntityCreate/>} />
+      <Route path="/:category/:subCat/:id" element={<EntityCreate/>} />
       <Route element={<Login/>} />
     </Route>
   ))

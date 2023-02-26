@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Grid, Typography } from "@mui/material";
 import CustomButton from "../CustomButton";
-import LoginStore from "../../utils/stores/LoginStore";
+import LoginStore from "../../utils/stores/EditStore";
 import { useNavigate } from "react-router-dom";
 
 // import { useNavigate } from "react-router-dom";

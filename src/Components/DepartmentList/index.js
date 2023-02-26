@@ -1,45 +1,109 @@
-import { Grid, Typography, Button } from '@mui/material'
-import React, {useState} from 'react'
+import { Grid, Typography, Button, Link, Dialog, DialogActions, DialogTitle } from '@mui/material'
+import React, {useEffect, useState} from 'react'
 import CustomButton from '../CustomButton';
 import { useStyles } from "./styles";
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import LoginStore from "../../utils/stores/LoginStore";
+import LoginStore from "../../utils/stores/EditStore";
 import Header from '../Header';
-
+import CreationStore from '../../utils/stores/CreationStore';
+import { getFromStore } from '../../utils/hooks/storage';
+import { editDepartmentStatus$ } from '../../api/axios';
+import { dataLoader } from '../EmployeeList';
 // import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 
 export default function EmployeeList() {
-    LoginStore.next(true)
+
     const classes = useStyles()
     const navigate = useNavigate()
-    const [seachTxt, setSearch] = useState("")
-    const [age, setAge] = useState()
+    const [searchTxt, setSearch] = useState("")
+    let data = getFromStore("allData")
 
-    const data = [
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", name: "name1", manager:"manager1", status:"Active"},
-    ]
+    const [status, setStatus] = useState("0")
+    const [originalDta] = useState(data?.departments)
+    const [displayData, setDisplayData] = useState(data?.departments)
+    const [open, setOpen] = useState(false);
+    const [dialogMessage, setMessage] = useState("");
+
+
+    const handleClose = ()=>{
+        setOpen(false)
+        data = getFromStore("allData")
+        setDisplayData(data?.departments)
+    }
 
     const handleClick = () => {
+        let data = originalDta.filter((odta)=>{
+            return (
+                odta.status=== (status==="0"? odta.status: status)
+            )
+        })
+
+        setDisplayData(data)
+    }
+
+    useEffect(()=>{
+        let data = originalDta.filter((odta)=>{
+            return (
+                odta.status.toLowerCase().includes(searchTxt) || 
+                odta.name.toLowerCase().includes(searchTxt) || 
+                odta.manager.toLowerCase().includes(searchTxt)
+            )
+        })
+
+        setDisplayData(data)
+    },[searchTxt])
+
+    const createNavigate = (e) =>{
+        CreationStore.next("department-list")
+        if(e === "createE")
+            navigate("/employee/create")
+        else
+            navigate("/department/create")
+    }
+
+    const editHandler = (id) =>{
+        CreationStore.next("department-list")
+        navigate(`/department/edit/${id}`)
+    }
+
+    const actionHandler = (id)=>{
+        let status;
+        let department = data.departments.filter((dpt)=>{
+            return dpt.id === id
+        })[0]
+        if(department.status === "Active")
+            status = "Inactive"
+        else
+            status = "Active"
+
+        editDepartmentStatus$({Status: status}, id).then(async (res)=>{
+            setMessage(`Status ${status === "Active"? "Activated": "Deactivated"}`)
+            data = await dataLoader()
+            setOpen(true)
+        }).catch(err=> console.log("Error updating status", err))
 
     }
 
-    const handleChange = () =>{
-
-    }
     return (
         <>
             <Header/>
+            <Dialog
+                open={open}
+                onClose={handleClose}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+                >
+                <DialogTitle id="alert-dialog-title">
+                {dialogMessage}
+                </DialogTitle>
+                <DialogActions>
+                    <Button onClick={handleClose} autoFocus>
+                        Okay
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <Grid container spacing={2}>
                 <Grid item  xs={12}>
                     <Typography className={classes.screen} variant='h4' color="white" >Departments</Typography> 
@@ -50,9 +114,8 @@ export default function EmployeeList() {
                         
                         <Grid className={classes.menuBtns} >
                             <Button fullWidth className='mb-2' variant="contained" onClick={()=> navigate("/employees-list") } >Go to Employees</Button>
-                            {/* <Button fullWidth variant="contained" disabled >Go to Departments</Button> */}
-                            <Button fullWidth className='mb-2' variant="contained" >Create Employee</Button>
-                            <Button fullWidth className='mb-2'variant="contained" >Create Department</Button>
+                             <Button fullWidth className='mb-2' variant="contained" onClick={()=> createNavigate("createE") } >Create Employee</Button>
+                            <Button fullWidth className='mb-2'variant="contained" onClick={()=> createNavigate("createD") } >Create Department</Button>
                         </Grid>
                     </Grid>
                 </Grid>
@@ -65,10 +128,10 @@ export default function EmployeeList() {
                                     <p >Status</p> 
                                 </Grid>
                                 <Grid item  xs={6}>
-                                    <select className="form-select" aria-label="Default select example">
-                                        <option value="1">Active Only</option>
-                                        <option value="2">All</option>
-                                        <option value="3">Deactive only</option>
+                                    <select onChange={ (e)=> setStatus(e.target.value) } className="form-select" aria-label="Default select example">
+                                        <option value="0">All</option>
+                                        <option value="Active">Active Only</option>
+                                        <option value="Inactive">Deactive only</option>
                                     </select>
                                 </Grid>
                                 <Grid item  xs={12}>
@@ -98,7 +161,7 @@ export default function EmployeeList() {
                     </Grid>
                 </Grid>
                 <Grid item md={4}  xs={12}>
-                    <input value={seachTxt} className= {classes.search} type="text" onChange={(e)=> setSearch(e.target.value)}/>
+                    <input value={searchTxt} className= {classes.search} type="text" onChange={(e)=> setSearch(e.target.value.toLowerCase())}/>
                 </Grid>
             </Grid>
             <div className={classes.contentHeader}>
@@ -119,11 +182,14 @@ export default function EmployeeList() {
 
                 <div id="employees" className={classes.content}>
                     {
-                        data.map((dt, index)=>{
+                        displayData.map((dt, index)=>{
                             return (
                             <div key={index} className="row" >
                                 <div className='col-3' >
-                                    <p className="ps-2">{dt.Actions}</p> 
+                                    <>
+                                        <Link onClick={()=>editHandler(dt.id)} className="ps-2" role="button" >Edit </Link> 
+                                        <Link onClick={()=>actionHandler(dt.id)} role="button">{dt.status === "Active"? "Deactivate": "Activate"}</Link>
+                                    </>  
                                 </div>
                                 <div className='col-3' >
                                     <p>{dt.name}</p> 

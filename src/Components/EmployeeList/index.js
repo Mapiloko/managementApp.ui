@@ -1,52 +1,128 @@
-import { Grid, Typography, Button } from '@mui/material'
-import React, {useState} from 'react'
+import { Grid, Typography, Button, Link, Dialog, DialogActions, DialogTitle } from '@mui/material'
+import React, {useEffect, useState} from 'react'
 import CustomButton from '../CustomButton';
 import { useStyles } from "./styles";
-import { useLoaderData, useNavigation, useNavigate } from 'react-router-dom';
-import SearchIcon from '@mui/icons-material/Search';
+import { editEmployeeStatus$, getDepartmentsData$, getEmployeesData$ } from '../../api/axios';
+import { 
+    useLoaderData, useNavigation, 
+    useNavigate } from 'react-router-dom';
+// import SearchIcon from '@mui/icons-material/Search';
 import Header from '../Header';
 import CreationStore from '../../utils/stores/CreationStore';
-// import LoginStore from "../../utils/stores/LoginStore";
-
-// import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { getFromStore, setToStore } from '../../utils/hooks/storage';
+import EditStore from '../../utils/stores/EditStore';
 
 
 export default function EmployeeList() {
-    // LoginStore.next(true)
-    const dog = useLoaderData()
+    let data = useLoaderData()
     const navigation = useNavigation()
+
     const navigate = useNavigate()
     const classes = useStyles()
-    const [seachTxt, setSearch] = useState("")
-    const [age, setAge] = useState()
+    const [searchTxt, setSearch] = useState("")
+    const [status, setStatus] = useState("0")
+    const [department, setDepartment] = useState("0")
+    const [manager, setManager] = useState("0")
+    const [originalDta, setOriginalData] = useState(data?.employees)
+    const [displayData, setDisplayData] = useState(data?.employees)
+    const [open, setOpen] = useState(false);
+    const [dialogMessage, setMessage] = useState("");
 
-    const data = [
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-        {Actions: "Edit Activate", firstName: "firstname1", lastName: "lastname1", telephone:"1112223333",email:"email@gamil.com", manager:"manager1", status:"Active"},
-    ]
 
-    const handleClick = () => {
+    const handleClose = ()=>{
+        setOpen(false)
+        data = getFromStore("allData")
+        setOriginalData(data?.employees)
+        handleClick(data?.employees)
+    }
 
+    useEffect(()=>{
+        let data = originalDta.filter((odta)=>{
+            return (
+                odta.status.toLowerCase().includes(searchTxt) || 
+                odta.firstName.toLowerCase().includes(searchTxt) || 
+                odta.lastName.toLowerCase().includes(searchTxt) || 
+                odta.manager.toLowerCase().includes(searchTxt) || 
+                odta.telephone.toLowerCase().includes(searchTxt) || 
+                odta.email.toLowerCase().includes(searchTxt)
+            )
+        })
+
+        setDisplayData(data)
+    },[searchTxt])
+
+    const handleClick = ( data_ = []) => {
+        let data;
+        if(data_.length)
+            data = data_.filter((odta)=>{
+                return (
+                    odta.status=== (status==="0"? odta.status: status) && 
+                odta.manager === (manager === "0"? odta.manager: manager ) && 
+                odta.manager === (department === "0"? odta.manager: department )
+                )
+            })
+        else
+            data = originalDta.filter((odta)=>{
+                return (
+                    odta.status=== (status==="0"? odta.status: status) && 
+                odta.manager === (manager === "0"? odta.manager: manager ) && 
+                odta.manager === (department === "0"? odta.manager: department )
+                )
+            })
+
+        setDisplayData(data)
     }
 
     const createNavigate = (e) =>{
-        CreationStore.next(e)
-        if(e == "createE")
+        CreationStore.next("employees-list")
+        if(e === "createE")
             navigate("/employee/create")
         else
             navigate("/department/create")
     }
+
+    const editHandler = (id) =>{
+        CreationStore.next("employees-list")
+        navigate(`/employee/edit/${id}`)
+    }
+
+    const actionHandler = (id)=>{
+        let status;
+        let employee = data.employees.filter((emp)=>{
+            return emp.id === id
+        })[0]
+        if(employee.status === "Active")
+            status = "Inactive"
+        else
+            status = "Active"
+    
+        editEmployeeStatus$({Status: status}, id).then(async (res)=>{
+            setMessage(`Status ${status === "Active"? "Activated": "Deactivated"}`)
+            data = await dataLoader()
+            setOpen(true)
+        }).catch(err=> console.log("Error updating status", err))
+    
+
+    }
+
     return (
         <> 
             <Header/>
+            <Dialog
+                open={open}
+                onClose={handleClose}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+                >
+                <DialogTitle id="alert-dialog-title">
+                {dialogMessage}
+                </DialogTitle>
+                <DialogActions>
+                    <Button onClick={handleClose} autoFocus>
+                        Okay
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <Grid container spacing={2}>
                 <Grid item  xs={12}>
                     <Typography className={classes.screen} variant='h4' color="white" >Employees</Typography> 
@@ -56,7 +132,6 @@ export default function EmployeeList() {
                         <Typography align='center'  color="white" >Menu</Typography>
                         
                         <Grid className={classes.menuBtns} >
-                            {/* <Button fullWidth className='mb-2' variant="contained" disabled >Go to Employees</Button> */}
                             <Button fullWidth className='mb-2' variant="contained"  onClick={()=> navigate("/department-list") }>Go to Departments</Button>
                             <Button fullWidth className='mb-2' variant="contained" onClick={()=> createNavigate("createE") } >Create Employee</Button>
                             <Button fullWidth className='mb-2'variant="contained" onClick={()=> createNavigate("createD") } >Create Department</Button>
@@ -72,10 +147,10 @@ export default function EmployeeList() {
                                     <p >Status</p> 
                                 </Grid>
                                 <Grid item  xs={6}>
-                                    <select className="form-select" aria-label="Default select example">
-                                        <option value="1">Active Only</option>
-                                        <option value="2">All</option>
-                                        <option value="3">Deactive only</option>
+                                    <select onChange={ (e)=> setStatus(e.target.value) } className="form-select" aria-label="Default select example">
+                                        <option value="0">All</option>
+                                        <option value="Active">Active Only</option>
+                                        <option value="Inactive">Deactive only</option>
                                     </select>
                                 </Grid>
                             </Grid>
@@ -84,10 +159,13 @@ export default function EmployeeList() {
                                     <p >Department</p> 
                                 </Grid>
                                 <Grid item  xs={6}>
-                                    <select className="form-select" aria-label="Default select example">
-                                        <option value="1">One</option>
-                                        <option value="2">Two</option>
-                                        <option value="3">Three</option>
+                                    <select onChange={ (e)=> setDepartment(e.target.value) }  className="form-select" aria-label="Default select example">
+                                        <option value="0">All</option>
+                                        {data.departments.map((dept)=>{
+                                            return (    
+                                                <option key={dept.id} value={dept.manager}>{dept.name}</option>
+                                            )
+                                        })}
                                     </select>
                                 </Grid>
                             </Grid>
@@ -96,10 +174,17 @@ export default function EmployeeList() {
                                     <p >Manager</p> 
                                 </Grid>
                                 <Grid item  xs={6}>
-                                    <select className="form-select" aria-label="Default select example">
-                                        <option value="1">One</option>
-                                        <option value="2">Two</option>
-                                        <option value="3">Three</option>
+                                    <select onChange={ (e)=> setManager(e.target.value) } className="form-select" aria-label="Default select example">
+                                        <option value="0">All</option>
+                                        {
+                                            data.employees.filter((dta)=>{
+                                                return dta.isManager
+                                            }).map((mpd)=>{
+                                                return (
+                                                    <option key={mpd.id} value={`${mpd.firstName} ${mpd.lastName}`}>{`${mpd.firstName} ${mpd.lastName}`}</option>
+                                                )
+                                            })
+                                        }
                                     </select>
                                 </Grid>
                             </Grid>
@@ -129,15 +214,7 @@ export default function EmployeeList() {
                         </Grid>
                     </Grid>
                     <Grid item md={4}  xs={12}>
-                        <input value={seachTxt} className= {classes.search} type="text" onChange={(e)=> setSearch(e.target.value)}/>
-                        {/* <Grid container style={{backgroundColor:"white"}}>
-                            <Grid item xs={1} style={{position:"relative", margin: "auto 0"}}>
-                                <SearchIcon  className= {classes.SearchIcon}/>
-                            </Grid> 
-                            <Grid item xs={11}>
-						        <input value={seachTxt} className= {classes.search} type="text" onChange={(e)=> setSearch(e.target.value)}/>
-                            </Grid> 
-                        </Grid> */}
+                        <input value={searchTxt} className= {classes.search} type="text" onChange={(e)=> setSearch(e.target.value.toLowerCase())}/>
                     </Grid>
             </Grid>
             <div className={classes.contentHeader}>
@@ -167,29 +244,32 @@ export default function EmployeeList() {
 
                 <div id="employees" className={classes.content}>
                     {
-                        data.map((dt, index)=>{
+                        displayData.map((dt, index)=>{
                             return (
                             <div key={index} className="row" >
                                 <div className='col-md-2' >
-                                    <p className="ps-2">{dt.Actions}</p> 
+                                    <>
+                                        <Link onClick={()=>editHandler(dt.id)} className="ps-2" role="button" >Edit </Link> 
+                                        <Link onClick={()=>actionHandler(dt.id)} role="button">{dt.status === "Active"? "Deactivate": "Activate"}</Link>
+                                    </> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p>{dt.firstName}</p> 
+                                    <p className='m-0' >{dt.firstName}</p> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p>{dt.lastName}</p> 
+                                    <p className='m-0 py-2'>{dt.lastName}</p> 
                                 </div>
                                 <div className='col-md-1' >
-                                    <p>{dt.telephone}</p> 
+                                    <p className='m-0'>{dt.telephone}</p> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p>{dt.email}</p> 
+                                    <p className='m-0'>{dt.email}</p> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p>{dt.manager}</p> 
+                                    <p className='m-0'>{dt.manager}</p> 
                                 </div>
                                 <div className='col-md-1' >
-                                    <p>{dt.status}</p> 
+                                    <p className='m-0'>{dt.status}</p> 
                                 </div>
                             </div> 
                             )
@@ -207,8 +287,32 @@ export default function EmployeeList() {
 }
 
 export const dataLoader = async ()=>{
-    const res = await fetch('https://random.dog/woof.json')
-    const dog = await res.json()
+    const res = await getEmployeesData$()
+    const employees = await res.json()    
+    employees.forEach(rsp => {
+        let manager = employees.filter((rp)=>{
+            return rp.id === rsp.managerId
+        })
+        if(manager.length > 0 )
+            rsp["manager"] = `${manager[0].firstName} ${manager[0].lastName}`
+        else
+            rsp["manager"] = `${rsp.firstName} ${rsp.lastName}`
+    });
 
-    return dog
+    const dept = await getDepartmentsData$();
+    const departments = await dept.json() 
+
+    departments.forEach(dpt => {
+        let manager = employees.filter((emp)=>{
+            return emp.id === dpt.managerId
+        })[0]
+        dpt["manager"] = `${manager.firstName} ${manager.lastName}`
+    });
+
+    const data = {
+        employees: employees,
+        departments: departments
+    }
+    setToStore("allData", data)
+    return data;
 }
