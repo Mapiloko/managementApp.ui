@@ -2,7 +2,6 @@ import { Grid, Typography, Button, Link, Dialog, DialogActions, DialogTitle } fr
 import React, {useEffect, useState} from 'react'
 import CustomButton from '../CustomButton';
 import { useStyles } from "./styles";
-import { editEmployeeStatus$, getDepartmentsData$, getEmployeesData$ } from '../../api/axios';
 import { 
     useLoaderData, useNavigation, 
     useNavigate } from 'react-router-dom';
@@ -10,13 +9,14 @@ import {
 import Header from '../Header';
 import CreationStore from '../../utils/stores/CreationStore';
 import { getFromStore, setToStore } from '../../utils/hooks/storage';
-import EditStore from '../../utils/stores/EditStore';
+import { editEmployeeStatus$, getEmployeesData$ } from '../../api/employees';
+import { getDepartmentsData$ } from '../../api/departments';
+import Loader from '../Loader';
 
 
 export default function EmployeeList() {
     let data = useLoaderData()
     const navigation = useNavigation()
-
     const navigate = useNavigate()
     const classes = useStyles()
     const [searchTxt, setSearch] = useState("")
@@ -26,6 +26,7 @@ export default function EmployeeList() {
     const [originalDta, setOriginalData] = useState(data?.employees)
     const [displayData, setDisplayData] = useState(data?.employees)
     const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false)
     const [dialogMessage, setMessage] = useState("");
 
 
@@ -54,19 +55,19 @@ export default function EmployeeList() {
     const handleClick = ( data_ = []) => {
         let data;
         if(data_.length)
-            data = data_.filter((odta)=>{
-                return (
-                    odta.status=== (status==="0"? odta.status: status) && 
+        data = data_.filter((odta)=>{
+            return (
+                odta.status=== (status==="0"? odta.status: status) && 
                 odta.manager === (manager === "0"? odta.manager: manager ) && 
-                odta.manager === (department === "0"? odta.manager: department )
+                `${odta.departmentId}` === (department === "0"? `${odta.departmentId}`: department )
                 )
             })
-        else
+            else
             data = originalDta.filter((odta)=>{
                 return (
                     odta.status=== (status==="0"? odta.status: status) && 
                 odta.manager === (manager === "0"? odta.manager: manager ) && 
-                odta.manager === (department === "0"? odta.manager: department )
+                `${odta.departmentId}` === (department === "0"? `${odta.departmentId}`: department )
                 )
             })
 
@@ -87,6 +88,7 @@ export default function EmployeeList() {
     }
 
     const actionHandler = (id)=>{
+        setLoading(true)
         let status;
         let employee = data.employees.filter((emp)=>{
             return emp.id === id
@@ -99,8 +101,12 @@ export default function EmployeeList() {
         editEmployeeStatus$({Status: status}, id).then(async (res)=>{
             setMessage(`Status ${status === "Active"? "Activated": "Deactivated"}`)
             data = await dataLoader()
+            setLoading(false)
             setOpen(true)
-        }).catch(err=> console.log("Error updating status", err))
+        }).catch(err=> {
+            setLoading(false)
+            console.log("Error updating status", err)
+        })
     
 
     }
@@ -108,6 +114,9 @@ export default function EmployeeList() {
     return (
         <> 
             <Header/>
+            {loading &&
+                <Loader/>
+            }
             <Dialog
                 open={open}
                 onClose={handleClose}
@@ -163,7 +172,7 @@ export default function EmployeeList() {
                                         <option value="0">All</option>
                                         {data.departments.map((dept)=>{
                                             return (    
-                                                <option key={dept.id} value={dept.manager}>{dept.name}</option>
+                                                <option key={dept.id} value={dept.id}>{dept.name}</option>
                                             )
                                         })}
                                     </select>
@@ -288,25 +297,23 @@ export default function EmployeeList() {
 
 export const dataLoader = async ()=>{
     const res = await getEmployeesData$()
-    const employees = await res.json()    
-    employees.forEach(rsp => {
-        let manager = employees.filter((rp)=>{
-            return rp.id === rsp.managerId
-        })
-        if(manager.length > 0 )
-            rsp["manager"] = `${manager[0].firstName} ${manager[0].lastName}`
-        else
-            rsp["manager"] = `${rsp.firstName} ${rsp.lastName}`
-    });
-
     const dept = await getDepartmentsData$();
-    const departments = await dept.json() 
 
+    const employees = await res.json()    
+    const departments = await dept.json() 
+    
+    employees.forEach(rsp => {
+        let manager = employees.filter((emp)=>{
+            return emp.departmentId === rsp.departmentId && emp.isManager
+        })
+        rsp["manager"] = `${manager[0].firstName} ${manager[0].lastName}`
+    });
+    
     departments.forEach(dpt => {
         let manager = employees.filter((emp)=>{
-            return emp.id === dpt.managerId
-        })[0]
-        dpt["manager"] = `${manager.firstName} ${manager.lastName}`
+            return dpt.managerId === emp.id 
+        })
+        dpt["manager"] = `${manager[0].firstName} ${manager[0].lastName}`
     });
 
     const data = {

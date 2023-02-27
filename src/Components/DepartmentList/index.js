@@ -8,8 +8,9 @@ import LoginStore from "../../utils/stores/EditStore";
 import Header from '../Header';
 import CreationStore from '../../utils/stores/CreationStore';
 import { getFromStore } from '../../utils/hooks/storage';
-import { editDepartmentStatus$ } from '../../api/axios';
+import { editDepartmentStatus$ } from '../../api/departments';
 import { dataLoader } from '../EmployeeList';
+import Loader from '../Loader';
 // import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 
@@ -25,21 +26,30 @@ export default function EmployeeList() {
     const [displayData, setDisplayData] = useState(data?.departments)
     const [open, setOpen] = useState(false);
     const [dialogMessage, setMessage] = useState("");
+    const [loading, setLoading] = useState(false)
 
 
     const handleClose = ()=>{
         setOpen(false)
         data = getFromStore("allData")
         setDisplayData(data?.departments)
+        handleClick(data?.departments)
     }
 
-    const handleClick = () => {
-        let data = originalDta.filter((odta)=>{
-            return (
-                odta.status=== (status==="0"? odta.status: status)
-            )
-        })
-
+    const handleClick = (data_= []) => {
+        let data;
+        if(data_.length)
+            data = data_.filter((odta)=>{
+                return (
+                    odta.status=== (status==="0"? odta.status: status)
+                )
+            })
+        else
+            data = originalDta.filter((odta)=>{
+                return (
+                    odta.status=== (status==="0"? odta.status: status)
+                )
+            })
         setDisplayData(data)
     }
 
@@ -69,6 +79,7 @@ export default function EmployeeList() {
     }
 
     const actionHandler = (id)=>{
+        setLoading(true)
         let status;
         let department = data.departments.filter((dpt)=>{
             return dpt.id === id
@@ -81,6 +92,7 @@ export default function EmployeeList() {
         editDepartmentStatus$({Status: status}, id).then(async (res)=>{
             setMessage(`Status ${status === "Active"? "Activated": "Deactivated"}`)
             data = await dataLoader()
+            setLoading(false)
             setOpen(true)
         }).catch(err=> console.log("Error updating status", err))
 
@@ -89,6 +101,9 @@ export default function EmployeeList() {
     return (
         <>
             <Header/>
+            {loading &&
+                <Loader/>
+            }
             <Dialog
                 open={open}
                 onClose={handleClose}
