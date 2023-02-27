@@ -19,7 +19,7 @@ export default function EntityCreate() {
     const navigation = useNavigation()   
     const route = useSubject(CreationStore)
     const { category, subCat, id } = useParams();
-    const [name, setName] = useState()
+    const [name, setName] = useState("")
     const [surname, setSurname] = useState("")
     const [telephone, setTelephone] = useState("")
     const [edit, setEdit] = useState(false)
@@ -30,6 +30,13 @@ export default function EntityCreate() {
     const [open, setOpen] = useState(false);
     const [dialogMessage, setMessage] = useState("");
     const [loading, setLoading] = useState(false)
+
+    const [validName, setValidname] = useState(true);
+    const [validLastname, setValLastname] = useState(true);
+    const [validEmail, setValidEmail] = useState(true);
+    const [validTelephone, setValTelephone] = useState(true);
+    const [validSave, setValidSave] = useState(true);
+
 
 
 
@@ -249,6 +256,69 @@ export default function EntityCreate() {
             navigate("/employees-list")
     }
 
+    const validateValue = (type, value)=>{
+        let notSave = false;
+        if(type === "name")
+        {   
+            if(!value.match(/^[A-Za-z0-9]+$/) || value.length === 0)
+            {
+                notSave = true;
+                setValidname(false)
+            }
+            else
+                setValidname(true)
+            setName(value)
+        }
+        else if(type === "surname")
+        {   
+            if(!value.match(/^[A-Za-z0-9]+$/) || value.length === 0)
+            {
+                notSave = true;
+                setValLastname(false)
+            }
+            else
+                setValLastname(true)
+            setSurname(value)   
+        }
+        else if(type === "telephone")
+        {   
+            if(!value.match(/^[0-9 ]*$/) || value.length !== 10)
+            {
+                notSave = true;
+                setValTelephone(false)
+            }
+            else
+                setValTelephone(true)
+            setTelephone(value)   
+        }
+        else if(type === "email")
+        {   
+            if(!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value) || value.length === 0)
+            {
+                notSave = true;
+                setValidEmail(false)
+            }
+            else
+                setValidEmail(true)
+            setEmail(value) 
+        }
+
+        if(category === "employee")
+        {
+            if(!notSave && name.length !== 0 && surname.length !== 0 && telephone.length !== 0 && email.length !== 0 )
+                setValidSave(false)
+            else
+                setValidSave(true)
+        }
+        else
+        {
+            if(!notSave)
+                setValidSave(false)
+            else
+                setValidSave(true)
+        }
+
+    }
   return (
     <>
         <Header/>
@@ -290,7 +360,10 @@ export default function EntityCreate() {
                         <Typography variant='h5'>*Name</Typography>
                     </Grid>
                     <Grid item md={8}>
-                        <input defaultValue={name} width="100%" className= {classes.userName} onChange={(e)=>setName(e.target.value)}/>
+                        <input defaultValue={name} width="100%" className= {classes.userName} onChange={(e)=> validateValue("name", e.target.value)}/>
+                        { !validName &&
+                            <Typography color="red">Enter valid name*</Typography>
+                        }
                     </Grid>
                 </Grid>
                 {category === "employee" && 
@@ -300,7 +373,10 @@ export default function EntityCreate() {
                                 <Typography variant='h5'>*Surname</Typography>
                             </Grid>
                             <Grid item md={8}>
-                                <input defaultValue={surname} className= {classes.userName} onChange={(e)=> setSurname(e.target.value)}/>
+                                <input defaultValue={surname} className= {classes.userName} onChange={(e)=> validateValue("surname", e.target.value)}/>
+                                { !validLastname &&
+                                    <Typography color="red">Enter valid Surname*</Typography>
+                                }
                             </Grid>
                         </Grid>
                         <Grid container style={{margin:"1.5rem 0"}}>
@@ -308,7 +384,10 @@ export default function EntityCreate() {
                                 <Typography variant='h5'>*Telephone Number</Typography>
                             </Grid>
                             <Grid item md={8}>
-                                <input defaultValue={telephone} className= {classes.userName} onChange={(e)=> setTelephone(e.target.value)}/>
+                                <input defaultValue={telephone} className= {classes.userName} onChange={(e)=> validateValue("telephone", e.target.value)}/>
+                                { !validTelephone &&
+                                    <Typography color="red">Enter valid telephone number with 10 digits*</Typography>
+                                }
                             </Grid>
                         </Grid>
                         <Grid container style={{margin:"1.5rem 0"}}>
@@ -316,7 +395,10 @@ export default function EntityCreate() {
                                 <Typography variant='h5'>*Email Address</Typography>
                             </Grid>
                             <Grid item md={8}>
-                                <input defaultValue={email} className= {classes.userName} onChange={(e)=> setEmail(e.target.value)}/>
+                                <input defaultValue={email} className= {classes.userName} onChange={(e)=> validateValue("email", e.target.value)}/>
+                                { !validEmail &&
+                                    <Typography color="red">Enter valid email Address*</Typography>
+                                }
                             </Grid>
                         </Grid>
                     </>
@@ -326,7 +408,11 @@ export default function EntityCreate() {
                         <Typography variant='h5'>*Manager</Typography>
                     </Grid>
                     <Grid item md={8}>
-                        <select onChange={(e)=>setManagerId(parseInt(e.target.value))} className="form-select" aria-label="Default select example">
+                        <select onChange={(e)=>{
+                            validateValue("test", "test")
+                            setManagerId(parseInt(e.target.value))
+                        }} 
+                        className="form-select" aria-label="Default select example">
                         {subCat === "edit" && manager.length !== 0 && 
                             <option key={manager[0].id} value={manager[0].id}>{`${manager[0].firstName} ${manager[0].lastName} (Current manager)`}</option>
                         }
@@ -350,7 +436,10 @@ export default function EntityCreate() {
                             <Typography variant='h5'>*Status</Typography>
                         </Grid>
                         <Grid item md={8}>
-                            <select onChange={(e)=>setStatus(e.target.value)} className="form-select" aria-label="Default select example">
+                            <select onChange={(e)=>{
+                                validateValue("test", "test")
+                                setStatus(e.target.value)}
+                                } className="form-select" aria-label="Default select example">
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Deactive</option>
                             </select>
@@ -363,7 +452,7 @@ export default function EntityCreate() {
             <Grid item md={9}>
             </Grid>
             <Grid item md={1}>
-                <CustomButton handleClick={ handleSave } title="Save"/>
+                <CustomButton disabled={validSave} handleClick={ handleSave } title="Save"/>
             </Grid>
             <Grid item md={1}>
                 <CustomButton handleClick={ handleCancel } title="Cancel"/>
