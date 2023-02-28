@@ -1,6 +1,6 @@
-import { Grid, Typography, Button, Link, Dialog, DialogActions, DialogTitle } from '@mui/material'
+import { Grid, Typography, Button, Link, Dialog, DialogActions, DialogTitle  } from '@mui/material'
 import React, {useEffect, useState} from 'react'
-import CustomButton from '../CustomButton';
+import CustomButton from '../../Helpers/CustomButton';
 import { useStyles } from "./styles";
 import { 
     useLoaderData, useNavigation, 
@@ -12,23 +12,30 @@ import { getFromStore, setToStore } from '../../utils/hooks/storage';
 import { editEmployeeStatus$, getEmployeesData$ } from '../../api/employees';
 import { getDepartmentsData$ } from '../../api/departments';
 import Loader from '../Loader';
+import Pagination from '../../Helpers/Pagination';
 
 
 export default function EmployeeList() {
     let data = useLoaderData()
-    const navigation = useNavigation()
     const navigate = useNavigate()
     const classes = useStyles()
     const [searchTxt, setSearch] = useState("")
     const [status, setStatus] = useState("0")
     const [department, setDepartment] = useState("0")
     const [manager, setManager] = useState("0")
-    const [originalDta, setOriginalData] = useState(data?.employees)
-    const [displayData, setDisplayData] = useState(data?.employees)
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false)
     const [dialogMessage, setMessage] = useState("");
+    const [currentPage, setCurrentPage] = useState(1)
+    const [employeesPerPage, setEmpPerPage] = useState(5);
+    
+    //Pagenation
+    const indextOflastEmployee = currentPage * employeesPerPage;
+    const indexOfFirstEmployee = indextOflastEmployee - employeesPerPage;
+    const currentEmployees = data.employees.slice(indexOfFirstEmployee, indextOflastEmployee)
 
+    const [originalDta, setOriginalData] = useState(currentEmployees)
+    const [displayData, setDisplayData] = useState(currentEmployees)
 
     const handleClose = ()=>{
         setOpen(false)
@@ -37,6 +44,13 @@ export default function EmployeeList() {
         handleClick(data?.employees)
     }
 
+    useEffect(()=>{
+        setOriginalData(currentEmployees)
+        setDisplayData(currentEmployees)
+    },[employeesPerPage, currentPage])
+
+    const paginate = (number) => setCurrentPage(number)
+    
     useEffect(()=>{
         let data = originalDta.filter((odta)=>{
             return (
@@ -110,6 +124,7 @@ export default function EmployeeList() {
     
 
     }
+
 
     return (
         <> 
@@ -212,12 +227,15 @@ export default function EmployeeList() {
                                 <p style={{margin: "0"}} >Show per page</p> 
                             </Grid> 
                             <Grid style={{margin: "auto 0"}} item xs={4}>
-                                <select className="form-select" aria-label="Default select example">
-                                    <option value="1">10</option>
-                                    <option value="2">20</option>
-                                    <option value="3">50</option>
-                                    <option value="3">100</option>
-                                    <option value="3">All</option>
+                                <select onChange={(e)=>{
+                                    setCurrentPage(1)
+                                    setEmpPerPage(parseInt(e.target.value))
+                                    }} 
+                                    className="form-select" aria-label="Default select example">
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={15}>15</option>
+                                    <option value={data.employees.length}>All</option>
                                 </select>                      
                             </Grid> 
                         </Grid>
@@ -286,11 +304,11 @@ export default function EmployeeList() {
                     }
                 </div>
             </div>
-            <Grid container style={{marginTop:"0.5rem"}}>
-                <Grid item xs={12}>
-                    <p> 1 2 3 4 5 6 </p> 
+            { employeesPerPage < data.employees.length &&
+                <Grid container style={{marginTop:"0.5rem"}}>
+                    <Pagination selected={currentPage} paginate={paginate} entityPerPage={employeesPerPage} totalEntities={data.employees.length} />
                 </Grid>
-            </Grid>
+            }
         </>
     )
 }

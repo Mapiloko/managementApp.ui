@@ -1,6 +1,6 @@
 import { Grid, Typography, Button, Link, Dialog, DialogActions, DialogTitle } from '@mui/material'
 import React, {useEffect, useState} from 'react'
-import CustomButton from '../CustomButton';
+import CustomButton from '../../Helpers/CustomButton';
 import { useStyles } from "./styles";
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
@@ -11,8 +11,7 @@ import { getFromStore } from '../../utils/hooks/storage';
 import { editDepartmentStatus$ } from '../../api/departments';
 import { dataLoader } from '../EmployeeList';
 import Loader from '../Loader';
-// import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-
+import Pagination from '../../Helpers/Pagination';
 
 export default function EmployeeList() {
 
@@ -22,13 +21,27 @@ export default function EmployeeList() {
     let data = getFromStore("allData")
 
     const [status, setStatus] = useState("0")
-    const [originalDta] = useState(data?.departments)
-    const [displayData, setDisplayData] = useState(data?.departments)
     const [open, setOpen] = useState(false);
     const [dialogMessage, setMessage] = useState("");
     const [loading, setLoading] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [departmentsPerPage, setEmpPerPage] = useState(5);
 
+    //Pagenation
+    const indextOflastDepartment = currentPage * departmentsPerPage;
+    const indexOfFirstDepartment = indextOflastDepartment - departmentsPerPage;
+    const currentDepartments = data.departments.slice(indexOfFirstDepartment, indextOflastDepartment)
 
+    const [originalDta, setOriginalData] = useState(currentDepartments)
+    const [displayData, setDisplayData] = useState(currentDepartments)
+
+    useEffect(()=>{
+        setOriginalData(currentDepartments)
+        setDisplayData(currentDepartments)
+    },[departmentsPerPage, currentPage])
+
+    const paginate = (number) => setCurrentPage(number)
+    
     const handleClose = ()=>{
         setOpen(false)
         data = getFromStore("allData")
@@ -165,13 +178,16 @@ export default function EmployeeList() {
                             <p style={{margin: "0"}} >Show per page</p> 
                         </Grid> 
                         <Grid style={{margin: "auto 0"}} item xs={4}>
-                            <select className="form-select" aria-label="Default select example">
-                                <option value="1">10</option>
-                                <option value="2">20</option>
-                                <option value="3">50</option>
-                                <option value="3">100</option>
-                                <option value="3">All</option>
-                            </select>                      
+                            <select onChange={(e)=>{
+                                setCurrentPage(1)
+                                setEmpPerPage(parseInt(e.target.value))
+                                }} 
+                                className="form-select" aria-label="Default select example">
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={15}>15</option>
+                                <option value={data.departments.length}>All</option>
+                            </select>                                         
                         </Grid> 
                     </Grid>
                 </Grid>
@@ -221,11 +237,11 @@ export default function EmployeeList() {
                     }
                 </div>
             </div>
-            <Grid container style={{marginTop:"0.5rem"}}>
-                <Grid item xs={12}>
-                    <p> 1 2 3 4 5 6 </p> 
+            { departmentsPerPage < data.departments.length &&
+                <Grid container style={{marginTop:"0.5rem"}}>
+                    <Pagination selected={currentPage} paginate={paginate} entityPerPage={departmentsPerPage} totalEntities={data.departments.length} />
                 </Grid>
-            </Grid>
+            }
         </>
     )
 }
