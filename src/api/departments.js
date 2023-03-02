@@ -1,10 +1,10 @@
 import AuthHeader from "../Services/AuthHeader";
 
-const baseURL= "https://localhost:5000/api";
+const baseURL= "https://localhost:5000/api/department";
 
 export const createDepartment$ = (body) =>
   fetch(
-    `${baseURL}/department`,
+    `${baseURL}/create`,
     {
       method: "POST",
       headers: AuthHeader(),
@@ -22,7 +22,7 @@ export const createDepartment$ = (body) =>
 
 export const getDepartmentsData$ = () =>
   fetch(
-  `${baseURL}/department`,
+  `${baseURL}/getall`,
     {
       method: "GET", // or 'PUT'
       headers: AuthHeader()
@@ -39,7 +39,7 @@ export const getDepartmentsData$ = () =>
 
 export const updateDepartment$ = (body, id) =>
   fetch(
-    `${baseURL}/department/${id}`,
+    `${baseURL}/update/${id}`,
     {
       method: "PUT",
       headers: AuthHeader(),
@@ -58,7 +58,7 @@ export const updateDepartment$ = (body, id) =>
 
 export const updateDepartmentStatus$ = (body, id) =>
   fetch(
-    `${baseURL}/department/status/${id}`,
+    `${baseURL}/update/status/${id}`,
     {
       method: "PUT",
       headers: AuthHeader(),
@@ -76,7 +76,7 @@ export const updateDepartmentStatus$ = (body, id) =>
 
 export const getDepartmentManager$ = (id) =>
   fetch(
-      `${baseURL}/department/manager/${id}`,
+      `${baseURL}/getbymanager/${id}`,
       {
         method: "GET",
         headers: AuthHeader(),

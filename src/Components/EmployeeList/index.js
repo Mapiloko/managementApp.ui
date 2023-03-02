@@ -318,9 +318,24 @@ export default function EmployeeList() {
 export const dataLoader = async ()=>{
     const res = await getEmployeesData$()
     const dept = await getDepartmentsData$();
-
+    
     const employees = await res.json()    
     const departments = await dept.json() 
+    
+    let data;
+    if( departments.Message === "No content")
+    {
+        data = { employees: [], departments: []}
+        setToStore("allData", data)
+        return data;
+    }
+
+    else if(employees.Message === "No content")
+    {
+        data = { employees: [], departments: departments }
+        setToStore("allData", data)
+        return data;
+    }
 
     employees.forEach(emp => {
         let department = departments.filter((dpt)=>{
@@ -329,7 +344,7 @@ export const dataLoader = async ()=>{
         emp["Manager"] = department.Manager
     });
 
-    const data = {
+    data = {
         employees: employees,
         departments: departments
     }

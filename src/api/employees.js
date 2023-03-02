@@ -24,7 +24,7 @@ export const createEmployee$ = (body) =>
 
 export const getEmployeesData$ = () =>
   fetch(
-    `${baseURL}`,
+    `${baseURL}/getall`,
     {
       method: "GET", // or 'PUT'
       headers: AuthHeader()
@@ -41,7 +41,7 @@ export const getEmployeesData$ = () =>
 
 export const updateEmployee$ = (body, id) =>
   fetch(
-    `${baseURL}/${id}`,
+    `${baseURL}/update/${id}`,
     {
       method: "PUT",
       headers: AuthHeader(),
@@ -59,7 +59,7 @@ export const updateEmployee$ = (body, id) =>
 
  export const editEmployeeStatus$ = (body, id) =>
   fetch(
-    `${baseURL}/status/${id}`,
+    `${baseURL}/update/status/${id}`,
     {
       method: "PUT",
       headers: AuthHeader(),

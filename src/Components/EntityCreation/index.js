@@ -65,7 +65,7 @@ export default function EntityCreate() {
                 emp.Role === "Manager"
             })
             setManager(mngr)
-            setManagerId(mngr[0].Id)
+            setManagerId(mngr[0]?.Id)
         }
         else{
             let mngr
@@ -81,7 +81,7 @@ export default function EntityCreate() {
                 })[0]
 
             setManager([mngr])
-            setManagerId(mngr.Id)
+            setManagerId(mngr?.Id)
         }
     } 
 
@@ -123,6 +123,7 @@ export default function EntityCreate() {
             navigate("/department/create")
         }
     const handleSave = ()=>{
+        
         setLoading(true) 
         let body={}
         
@@ -131,8 +132,18 @@ export default function EntityCreate() {
         })[0]
 
         let department = data.departments.filter((dpt)=>{
-            return dpt.Id === currentManager.DepartmentId 
+            return dpt.Id === currentManager?.DepartmentId 
         })[0]
+
+        if(department === undefined && data.departments.length > 0) 
+        {
+            department = data.departments.filter((dpt)=>{
+                return dpt.Manager === "Not Assigned" 
+            })[0]
+
+            if(department === undefined)
+                department = data.departments[0]
+        }
         
         if(subCat === "create")
         {
@@ -142,9 +153,9 @@ export default function EntityCreate() {
                     FirstName: name,
                     LastName: surname,
                     Telephone: telephone,
-                    DepartmentId: department.Id,
+                    DepartmentId: department?.Id,
                     Status: "Active",
-                    Role: "Employee",
+                    Role: "Manager",
                     Email: email    
                 }
 
@@ -156,6 +167,7 @@ export default function EntityCreate() {
                     setTelephone("")
                     setEmail("")
                     data = await dataLoader() 
+                    // startConfigs()
                     setLoading(false)
                     setOpen(true) 
                 }).catch(er=>{ 
@@ -169,22 +181,25 @@ export default function EntityCreate() {
                     Name: name,
                     Status: "Active",
                 }
-
                 createDepartment$(body).then(async(res)=>{
                     console.log("departement created")
                     setMessage(`Departement "${name}" Created`)
                     setName("")
                     const response = await res.json()
 
-                    const resp = await updateRole$({ UserName: currentManager.Email, RoleName: "Manager"})
-                    const res1 = await updateEmployeeDepartment({DepartmentId: response.Id}, currentManager.Id)
+                    if(currentManager !== undefined || department !== undefined)
+                    {
+                        const resp = await updateRole$({ UserName: currentManager.Email, RoleName: "Manager"})
+                        const res1 = await updateEmployeeDepartment({DepartmentId: response.Id}, currentManager.Id)
+                    }
 
                     data = await dataLoader()
+                    startConfigs()
                     setLoading(false)
                     setOpen(true) 
                 }).catch(er=>{ 
                     setLoading(false)
-                    console.log("Got some Error")
+                    console.log("Got some Error", er)
                 })
             }
         }
@@ -243,6 +258,7 @@ export default function EntityCreate() {
                 })
             }
         }
+        setValidSave(true)
     }
     const handleCancel = ()=>{
         if(route)
@@ -297,10 +313,10 @@ export default function EntityCreate() {
                 setValidEmail(true)
             setEmail(value) 
         }
-
         if(category === "employee")
         {
-            if(!notSave && name.length !== 0 && surname.length !== 0 && telephone.length !== 0 && email.length !== 0 )
+            if(!notSave && name.length !== 0 && surname.length !== 0 && telephone.length !== 0
+                 && email.length !== 0 && data.departments.length > 0 )
                 setValidSave(false)
             else
                 setValidSave(true)
@@ -312,6 +328,7 @@ export default function EntityCreate() {
             else
                 setValidSave(true)
         }
+
 
     }
   return (
