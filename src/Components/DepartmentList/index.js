@@ -8,7 +8,7 @@ import LoginStore from "../../utils/stores/EditStore";
 import Header from '../Header';
 import CreationStore from '../../utils/stores/CreationStore';
 import { getFromStore } from '../../utils/hooks/storage';
-import { editDepartmentStatus$ } from '../../api/departments';
+import { updateDepartmentStatus$ } from '../../api/departments';
 import { dataLoader } from '../EmployeeList';
 import Loader from '../Loader';
 import Pagination from '../../Helpers/Pagination';
@@ -20,7 +20,7 @@ export default function EmployeeList() {
     const [searchTxt, setSearch] = useState("")
     let data = getFromStore("allData")
 
-    const [status, setStatus] = useState("0")
+    const [Status, setStatus] = useState("0")
     const [open, setOpen] = useState(false);
     const [dialogMessage, setMessage] = useState("");
     const [loading, setLoading] = useState(false)
@@ -38,6 +38,7 @@ export default function EmployeeList() {
     useEffect(()=>{
         setOriginalData(currentDepartments)
         setDisplayData(currentDepartments)
+        handleClick(currentDepartments)
     },[departmentsPerPage, currentPage])
 
     const paginate = (number) => setCurrentPage(number)
@@ -54,13 +55,13 @@ export default function EmployeeList() {
         if(data_.length)
             data = data_.filter((odta)=>{
                 return (
-                    odta.status=== (status==="0"? odta.status: status)
+                    odta.Status=== (Status==="0"? odta.Status: Status)
                 )
             })
         else
             data = originalDta.filter((odta)=>{
                 return (
-                    odta.status=== (status==="0"? odta.status: status)
+                    odta.Status=== (Status==="0"? odta.Status: Status)
                 )
             })
         setDisplayData(data)
@@ -69,9 +70,9 @@ export default function EmployeeList() {
     useEffect(()=>{
         let data = originalDta.filter((odta)=>{
             return (
-                odta.status.toLowerCase().includes(searchTxt) || 
-                odta.name.toLowerCase().includes(searchTxt) || 
-                odta.manager.toLowerCase().includes(searchTxt)
+                odta.Status.toLowerCase().includes(searchTxt) || 
+                odta.Name.toLowerCase().includes(searchTxt) || 
+                odta.Manager.toLowerCase().includes(searchTxt)
             )
         })
 
@@ -93,21 +94,21 @@ export default function EmployeeList() {
 
     const actionHandler = (id)=>{
         setLoading(true)
-        let status;
+        let Status;
         let department = data.departments.filter((dpt)=>{
-            return dpt.id === id
+            return dpt.Id === id
         })[0]
-        if(department.status === "Active")
-            status = "Inactive"
+        if(department.Status === "Active")
+            Status = "Inactive"
         else
-            status = "Active"
+            Status = "Active"
 
-        editDepartmentStatus$({Status: status}, id).then(async (res)=>{
-            setMessage(`Status ${status === "Active"? "Activated": "Deactivated"}`)
+        updateDepartmentStatus$({Status: Status}, id).then(async (res)=>{
+            setMessage(`Status ${Status === "Active"? "Activated": "Deactivated"}`)
             data = await dataLoader()
             setLoading(false)
             setOpen(true)
-        }).catch(err=> console.log("Error updating status", err))
+        }).catch(err=> console.log("Error updating Status", err))
 
     }
 
@@ -218,18 +219,18 @@ export default function EmployeeList() {
                             <div key={index} className="row" >
                                 <div className='col-3' >
                                     <>
-                                        <Link onClick={()=>editHandler(dt.id)} className="ps-2" role="button" >Edit </Link> 
-                                        <Link onClick={()=>actionHandler(dt.id)} role="button">{dt.status === "Active"? "Deactivate": "Activate"}</Link>
+                                        <Link onClick={()=>editHandler(dt.Id)} className="ps-2" role="button" >Edit </Link> 
+                                        <Link onClick={()=>actionHandler(dt.Id)} role="button">{dt.Status === "Active"? "Deactivate": "Activate"}</Link>
                                     </>  
                                 </div>
                                 <div className='col-3' >
-                                    <p>{dt.name}</p> 
+                                    <p>{dt.Name}</p> 
                                 </div>
                                 <div className='col-3' >
-                                    <p>{dt.manager}</p> 
+                                    <p>{dt.Manager}</p> 
                                 </div>
                                 <div className='col-3' >
-                                    <p>{dt.status}</p> 
+                                    <p>{dt.Status}</p> 
                                 </div>
                             </div> 
                             )

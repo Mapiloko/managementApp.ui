@@ -5,12 +5,13 @@ import CreationStore from '../../utils/stores/CreationStore';
 import useSubject from '../../utils/hooks/useSubject';
 import { useParams, useNavigate, useNavigation } from 'react-router-dom';
 import Header from '../Header';
-import CustomButton from '../CustomButton';
 import { getFromStore } from '../../utils/hooks/storage';
 import { dataLoader } from '../EmployeeList';
-import { createEmployee$, editEmployee$, editEmployeeDepartment$, editEmployeeRole$ } from '../../api/employees';
-import { createDepartment$, editDepartment$ } from '../../api/departments.js';
+import { createEmployee$, updateEmployee$, updateEmployeeDepartment, editEmployeeRole$ } from '../../api/employees';
+import { createDepartment$, updateDepartment$ } from '../../api/departments.js';
 import Loader from '../Loader';
+import CustomButton from '../../Helpers/CustomButton';
+import { updateRole$ } from '../../api/accounts';
 
 
 export default function EntityCreate() {
@@ -24,7 +25,7 @@ export default function EntityCreate() {
     const [telephone, setTelephone] = useState("")
     const [edit, setEdit] = useState(false)
     const [email, setEmail] = useState("")
-    const [manager, setManager] = useState([{departmentId: "0"}])
+    const [manager, setManager] = useState([{DepartmentId: "0"}])
     const [managerId, setManagerId] = useState(0)
     const [status, setStatus] = useState("Active")
     const [open, setOpen] = useState(false);
@@ -49,38 +50,38 @@ export default function EntityCreate() {
             if(category === "employee")
             {
                 dpmnt = data.employees.filter((emp)=>{
-                    return emp.id === parseInt(id)
-                })[0].departmentId
+                    return emp.Id === parseInt(id)
+                })[0].DepartmentId
                
             }
             else{
                 dpmnt = data.departments.filter((dpmt)=>{
-                    return dpmt.id === parseInt(id)
-                })[0].id
+                    return dpmt.Id === parseInt(id)
+                })[0].Id
             }
 
             const mngr = data.employees.filter((emp)=>{
-                return emp.departmentId === dpmnt && 
-                emp.isManager
+                return emp.DepartmentId === dpmnt && 
+                emp.Role === "Manager"
             })
             setManager(mngr)
-            setManagerId(mngr[0].id)
+            setManagerId(mngr[0].Id)
         }
         else{
             let mngr
             if(category === "department")
             {
                 mngr = data.employees.filter((emp)=>{
-                    return !emp.isManager
+                    return emp.Role !== "Manager"
                 })[0]
             }
             else
             mngr = data.employees.filter((emp)=>{
-                return emp.isManager
+                return emp.Role === "Manager"
                 })[0]
 
             setManager([mngr])
-            setManagerId(mngr.id)
+            setManagerId(mngr.Id)
         }
     } 
 
@@ -96,19 +97,19 @@ export default function EntityCreate() {
                 if(category === "employee")
                 {
                     let currentEmp = data.employees.filter((emp)=>{
-                        return `${emp.id}` === id
+                        return `${emp.Id}` === id
                     })[0]
-                    setName(currentEmp.firstName)
-                    setSurname(currentEmp.lastName)
-                    setTelephone(currentEmp.telephone)
-                    setEmail(currentEmp.email) 
+                    setName(currentEmp.FirstName)
+                    setSurname(currentEmp.LastName)
+                    setTelephone(currentEmp.Telephone)
+                    setEmail(currentEmp.Email) 
                 }
                 else
                 {
                     let currentDpt = data.departments.filter((dpt)=>{
-                        return `${dpt.id}` === id
+                        return `${dpt.Id}` === id
                     })[0]
-                    setName(currentDpt.name)
+                    setName(currentDpt.Name)
                 }
             }
             setEdit(true)
@@ -126,11 +127,11 @@ export default function EntityCreate() {
         let body={}
         
         let currentManager = data.employees.filter((emp)=>{
-            return emp.id === managerId
+            return emp.Id === managerId
         })[0]
 
         let department = data.departments.filter((dpt)=>{
-            return dpt.id === currentManager.departmentId 
+            return dpt.Id === currentManager.DepartmentId 
         })[0]
         
         if(subCat === "create")
@@ -141,9 +142,10 @@ export default function EntityCreate() {
                     FirstName: name,
                     LastName: surname,
                     Telephone: telephone,
-                    DepartmentId: department.id,
-                    IsManager: false,
-                    Email: email
+                    DepartmentId: department.Id,
+                    Status: "Active",
+                    Role: "Employee",
+                    Email: email    
                 }
 
                 createEmployee$(body).then(async (res)=>{
@@ -158,23 +160,24 @@ export default function EntityCreate() {
                     setOpen(true) 
                 }).catch(er=>{ 
                     setLoading(false)
-                    console.log("Got some Error")
+                    console.log("Got some Error",er)
                 })
             }
             else if(category === "department")
             {
                 body = {
                     Name: name,
-                    ManagerId: managerId,
+                    Status: "Active",
                 }
+
                 createDepartment$(body).then(async(res)=>{
                     console.log("departement created")
                     setMessage(`Departement "${name}" Created`)
                     setName("")
                     const response = await res.json()
 
-                    const res1 = await editEmployeeDepartment$({DepartmentId: response.id}, currentManager.id)
-                    const res2 = await editEmployeeRole$({IsManager: true}, currentManager.id)
+                    const resp = await updateRole$({ UserName: currentManager.Email, RoleName: "Manager"})
+                    const res1 = await updateEmployeeDepartment({DepartmentId: response.Id}, currentManager.Id)
 
                     data = await dataLoader()
                     setLoading(false)
@@ -193,12 +196,11 @@ export default function EntityCreate() {
                     FirstName: name,
                     LastName: surname,
                     Telephone: telephone,
-                    DepartmentId: department.id,
-                    IsManager: false,
+                    DepartmentId: department.Id,
                     Email: email,
                     Status: status
                 }
-                editEmployee$(body, id).then(async (res)=>{
+                updateEmployee$(body, id).then(async (res)=>{
                     setMessage(`Employee "${name} ${surname}" Edited Successfully`)
                     setName("")
                     setSurname("")
@@ -206,12 +208,9 @@ export default function EntityCreate() {
                     setEmail("")
                     setLoading(false)
                     setOpen(true)
-                    if(manager[0].id !== currentManager.id)
+                    if(manager[0].Id !== currentManager.Id)
                     {
-                        const res = await editEmployeeRole$({IsManager: false}, manager[0].id)
-                        const res2 = await editEmployeeRole$({IsManager: true}, currentManager.id)
-                        const res3 = await editDepartment$({Name: department.name, ManagerId: currentManager.id,
-                            Status: department.status}, department.id)
+                        const res = await updateRole$({ UserName: currentManager.Email, RoleName: "Manager"})
                     }
                     data = await dataLoader()
                     startConfigs()
@@ -227,18 +226,14 @@ export default function EntityCreate() {
                     ManagerId: managerId,
                     Status: status
                 }
-                console.log("manager", manager[0].id, currentManager.id)
-                editDepartment$(body, id).then(async(res)=>{
+                updateDepartment$(body, id).then(async(res)=>{
                     setMessage(`Departement "${name}" Edited Successfully`)
                     setName("")
                     setLoading(false)
                     setOpen(true)
                     if(manager[0].id !== currentManager.id)
                     {
-                        const res = await editEmployeeRole$({IsManager: false}, manager[0].id)
-                        const res2 = await editEmployeeRole$({IsManager: true}, currentManager.id)
-                        const res3 = await editDepartment$({Name: department.name, ManagerId: currentManager.id,
-                            Status: department.status}, department.id)
+                        const res = await updateRole$({ UserName: currentManager.Email, RoleName: "Manager"})
                     } 
                     data = await dataLoader()
                     startConfigs()
@@ -312,7 +307,7 @@ export default function EntityCreate() {
         }
         else
         {
-            if(!notSave)
+            if(!notSave && name.length !== 0)
                 setValidSave(false)
             else
                 setValidSave(true)
@@ -414,16 +409,16 @@ export default function EntityCreate() {
                         }} 
                         className="form-select" aria-label="Default select example">
                         {subCat === "edit" && manager.length !== 0 && 
-                            <option key={manager[0].id} value={manager[0].id}>{`${manager[0].firstName} ${manager[0].lastName} (Current manager)`}</option>
+                            <option key={manager[0].Id} value={manager[0].Id}>{`${manager[0].FirstName} ${manager[0].LastName} (Current manager)`}</option>
                         }
                         {
                             data.employees.filter((dta)=>{
-                                return ( subCat === "edit"? (!dta.isManager && dta.departmentId === manager[0].departmentId) :
-                                 (subCat === "create" && category === "department"? !dta.isManager :
-                                 dta.isManager))
+                                return ( subCat === "edit"? (dta.Role !== "Manager" && dta.DepartmentId === manager[0].DepartmentId) :
+                                 (subCat === "create" && category === "department"? dta.Role !== "Manager" :
+                                 dta.Role === "Manager"))
                             }).map((mpd)=>{
                                 return (
-                                    <option key={mpd.id} value={mpd.id}>{`${mpd.firstName} ${mpd.lastName}`}</option>
+                                    <option key={mpd.Id} value={mpd.Id}>{`${mpd.FirstName} ${mpd.LastName}`}</option>
                                 )
                             })
                         }
@@ -455,7 +450,7 @@ export default function EntityCreate() {
                 <CustomButton disabled={validSave} handleClick={ handleSave } title="Save"/>
             </Grid>
             <Grid item md={1}>
-                <CustomButton handleClick={ handleCancel } title="Cancel"/>
+                <CustomButton  handleClick={ handleCancel } title="Cancel"/>
             </Grid>
         </Grid>
     </>

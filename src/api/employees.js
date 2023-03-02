@@ -1,15 +1,15 @@
-const baseURL= "https://localhost:5000/api";
+import AuthHeader from "../Services/AuthHeader";
+
+const baseURL= "https://localhost:5000/api/employee";
 
 
 export const createEmployee$ = (body) =>
   fetch(
-    `${baseURL}/employee`,
+    `${baseURL}/create`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+      headers: AuthHeader(),
+      body: JSON.stringify(body)
     }
   )
     .then((res) => {
@@ -21,15 +21,13 @@ export const createEmployee$ = (body) =>
       throw new Error(err);
     });
 
-      
-      export const getEmployeesData$ = () =>
+
+export const getEmployeesData$ = () =>
   fetch(
-    `${baseURL}/employee`,
+    `${baseURL}`,
     {
       method: "GET", // or 'PUT'
-      headers: {
-        "Content-Type": "application/json",
-      }
+      headers: AuthHeader()
     }
   )
     .then((res) => {
@@ -41,14 +39,12 @@ export const createEmployee$ = (body) =>
       throw new Error(err);
     });
 
-export const editEmployee$ = (body, id) =>
+export const updateEmployee$ = (body, id) =>
   fetch(
-    `${baseURL}/employee/${id}`,
+    `${baseURL}/${id}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: AuthHeader(),
       body: JSON.stringify(body),
     } 
   )
@@ -63,12 +59,10 @@ export const editEmployee$ = (body, id) =>
 
  export const editEmployeeStatus$ = (body, id) =>
   fetch(
-    `${baseURL}/employee/status/${id}`,
+    `${baseURL}/status/${id}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: AuthHeader(),
       body: JSON.stringify(body),
     } 
   )
@@ -83,12 +77,10 @@ export const editEmployee$ = (body, id) =>
 
 export const editEmployeeRole$ = (body, id) =>
   fetch(
-    `${baseURL}/employee/editrole/${id}`,
+    `${baseURL}/editrole/${id}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: AuthHeader(),
       body: JSON.stringify(body),
     } 
   )
@@ -101,14 +93,12 @@ export const editEmployeeRole$ = (body, id) =>
       throw new Error(err);
     });
       
-export const editEmployeeDepartment$ = (body, id) =>
+export const updateEmployeeDepartment = (body, id) =>
   fetch(
-    `${baseURL}/employee/department/${id}`,
+    `${baseURL}/edit/department/${id}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: AuthHeader(),
       body: JSON.stringify(body),
     } 
   )

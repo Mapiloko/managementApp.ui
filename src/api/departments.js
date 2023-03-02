@@ -1,3 +1,5 @@
+import AuthHeader from "../Services/AuthHeader";
+
 const baseURL= "https://localhost:5000/api";
 
 export const createDepartment$ = (body) =>
@@ -5,10 +7,8 @@ export const createDepartment$ = (body) =>
     `${baseURL}/department`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+      headers: AuthHeader(),
+      body: JSON.stringify(body)
     } 
   )
     .then((res) => {
@@ -25,9 +25,7 @@ export const getDepartmentsData$ = () =>
   `${baseURL}/department`,
     {
       method: "GET", // or 'PUT'
-      headers: {
-        "Content-Type": "application/json",
-      }
+      headers: AuthHeader()
     }
   )
     .then((res) => {
@@ -39,15 +37,13 @@ export const getDepartmentsData$ = () =>
       throw new Error(err);
     });
 
-export const editDepartment$ = (body, id) =>
+export const updateDepartment$ = (body, id) =>
   fetch(
     `${baseURL}/department/${id}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+      headers: AuthHeader(),
+      body: JSON.stringify(body)
     } 
   )
     .then((res) => {
@@ -60,14 +56,12 @@ export const editDepartment$ = (body, id) =>
     });
 
 
-export const editDepartmentStatus$ = (body, id) =>
+export const updateDepartmentStatus$ = (body, id) =>
   fetch(
     `${baseURL}/department/status/${id}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: AuthHeader(),
       body: JSON.stringify(body),
     } 
   )
@@ -79,5 +73,22 @@ export const editDepartmentStatus$ = (body, id) =>
     .catch((err) => {
       throw new Error(err);
     });
+
+export const getDepartmentManager$ = (id) =>
+  fetch(
+      `${baseURL}/department/manager/${id}`,
+      {
+        method: "GET",
+        headers: AuthHeader(),
+      } 
+    )
+      .then((res) => {
+        if (res.status === 200 || res.status === 204 || res.status === 201)
+          return res;
+        else throw new Error(res.status);
+      })
+      .catch((err) => {
+        throw new Error(err);
+      });
   
     

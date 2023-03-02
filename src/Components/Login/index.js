@@ -7,20 +7,30 @@ import { useNavigate } from "react-router-dom";
 // import { useNavigate } from "react-router-dom";
 import { useStyles } from "./styles";
 import Loader from "../Loader";
+import { setToStore } from "../../utils/hooks/storage";
+import { Login$ } from "../../api/accounts";
 
 
 const Login = () => {
 	const navigate = useNavigate();
 	LoginStore.next(false)
 	const classes = useStyles()
-	const [userName, setUsername] = useState("")
-	const [password, setPassword] = useState("")
+	const [userName, setUsername] = useState("hradmin@test.com")
+	const [password, setPassword] = useState("TestPass1234")
 	const [loading, setLoading] = useState(false)
 	const [wrongLogins, setWronglogins] = useState(false)
 
 	const handleClick = ()=>{
+		const body = { UserName: userName, Password: password}
+
 		setLoading(true)
-		navigate("/employees-list")
+		Login$(body).then(async (res)=>{
+			const response = await res.json()
+			setToStore("Token", response.Token)
+			navigate("/employees-list")
+		}).catch((err)=>{
+			console.log("Error", err)
+		})
 	}
 
 	return (

@@ -10,7 +10,7 @@ import Header from '../Header';
 import CreationStore from '../../utils/stores/CreationStore';
 import { getFromStore, setToStore } from '../../utils/hooks/storage';
 import { editEmployeeStatus$, getEmployeesData$ } from '../../api/employees';
-import { getDepartmentsData$ } from '../../api/departments';
+import { getDepartmentManager$, getDepartmentsData$ } from '../../api/departments';
 import Loader from '../Loader';
 import Pagination from '../../Helpers/Pagination';
 
@@ -20,9 +20,9 @@ export default function EmployeeList() {
     const navigate = useNavigate()
     const classes = useStyles()
     const [searchTxt, setSearch] = useState("")
-    const [status, setStatus] = useState("0")
+    const [Status, setStatus] = useState("0")
     const [department, setDepartment] = useState("0")
-    const [manager, setManager] = useState("0")
+    const [Manager, setManager] = useState("0")
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false)
     const [dialogMessage, setMessage] = useState("");
@@ -47,6 +47,7 @@ export default function EmployeeList() {
     useEffect(()=>{
         setOriginalData(currentEmployees)
         setDisplayData(currentEmployees)
+        handleClick(currentEmployees)
     },[employeesPerPage, currentPage])
 
     const paginate = (number) => setCurrentPage(number)
@@ -54,12 +55,12 @@ export default function EmployeeList() {
     useEffect(()=>{
         let data = originalDta.filter((odta)=>{
             return (
-                odta.status.toLowerCase().includes(searchTxt) || 
-                odta.firstName.toLowerCase().includes(searchTxt) || 
-                odta.lastName.toLowerCase().includes(searchTxt) || 
-                odta.manager.toLowerCase().includes(searchTxt) || 
-                odta.telephone.toLowerCase().includes(searchTxt) || 
-                odta.email.toLowerCase().includes(searchTxt)
+                odta.Status.toLowerCase().includes(searchTxt) || 
+                odta.FirstName.toLowerCase().includes(searchTxt) || 
+                odta.LastName.toLowerCase().includes(searchTxt) || 
+                odta.Manager.toLowerCase().includes(searchTxt) || 
+                odta.Telephone.toLowerCase().includes(searchTxt) || 
+                odta.Email.toLowerCase().includes(searchTxt)
             )
         })
 
@@ -71,17 +72,17 @@ export default function EmployeeList() {
         if(data_.length)
         data = data_.filter((odta)=>{
             return (
-                odta.status=== (status==="0"? odta.status: status) && 
-                odta.manager === (manager === "0"? odta.manager: manager ) && 
-                `${odta.departmentId}` === (department === "0"? `${odta.departmentId}`: department )
+                odta.Status=== (Status==="0"? odta.Status: Status) && 
+                odta.Manager === (Manager === "0"? odta.Manager: Manager ) && 
+                `${odta.DepartmentId}` === (department === "0"? `${odta.DepartmentId}`: department )
                 )
             })
             else
             data = originalDta.filter((odta)=>{
                 return (
-                    odta.status=== (status==="0"? odta.status: status) && 
-                odta.manager === (manager === "0"? odta.manager: manager ) && 
-                `${odta.departmentId}` === (department === "0"? `${odta.departmentId}`: department )
+                    odta.Status=== (Status==="0"? odta.Status: Status) && 
+                odta.Manager === (Manager === "0"? odta.Manager: Manager ) && 
+                `${odta.DepartmentId}` === (department === "0"? `${odta.DepartmentId}`: department )
                 )
             })
 
@@ -101,25 +102,26 @@ export default function EmployeeList() {
         navigate(`/employee/edit/${id}`)
     }
 
-    const actionHandler = (id)=>{
+    const actionHandler = (Id)=>{
         setLoading(true)
-        let status;
+        let Status;
         let employee = data.employees.filter((emp)=>{
-            return emp.id === id
+            return emp.Id === Id
         })[0]
-        if(employee.status === "Active")
-            status = "Inactive"
+        
+        if(employee.Status === "Active")
+            Status = "Inactive"
         else
-            status = "Active"
+            Status = "Active"
     
-        editEmployeeStatus$({Status: status}, id).then(async (res)=>{
-            setMessage(`Status ${status === "Active"? "Activated": "Deactivated"}`)
+        editEmployeeStatus$({Status: Status}, Id).then(async (res)=>{
+            setMessage(`Status ${Status === "Active"? "Activated": "Deactivated"}`)
             data = await dataLoader()
             setLoading(false)
             setOpen(true)
         }).catch(err=> {
             setLoading(false)
-            console.log("Error updating status", err)
+            console.log("Error updating Status", err)
         })
     
 
@@ -187,7 +189,7 @@ export default function EmployeeList() {
                                         <option value="0">All</option>
                                         {data.departments.map((dept)=>{
                                             return (    
-                                                <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                                <option key={dept.Id} value={dept.Id}>{dept.Name}</option>
                                             )
                                         })}
                                     </select>
@@ -202,10 +204,10 @@ export default function EmployeeList() {
                                         <option value="0">All</option>
                                         {
                                             data.employees.filter((dta)=>{
-                                                return dta.isManager
+                                                return dta.Role === "Manager"
                                             }).map((mpd)=>{
                                                 return (
-                                                    <option key={mpd.id} value={`${mpd.firstName} ${mpd.lastName}`}>{`${mpd.firstName} ${mpd.lastName}`}</option>
+                                                    <option key={mpd.Id} value={`${mpd.FirstName} ${mpd.LastName}`}>{`${mpd.FirstName} ${mpd.LastName}`}</option>
                                                 )
                                             })
                                         }
@@ -276,27 +278,27 @@ export default function EmployeeList() {
                             <div key={index} className="row" >
                                 <div className='col-md-2' >
                                     <>
-                                        <Link onClick={()=>editHandler(dt.id)} className="ps-2" role="button" >Edit </Link> 
-                                        <Link onClick={()=>actionHandler(dt.id)} role="button">{dt.status === "Active"? "Deactivate": "Activate"}</Link>
+                                        <Link onClick={()=>editHandler(dt.Id)} className="ps-2" role="button" >Edit </Link> 
+                                        <Link onClick={()=>actionHandler(dt.Id)} role="button">{dt.Status === "Active"? "Deactivate": "Activate"}</Link>
                                     </> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p className='m-0' >{dt.firstName}</p> 
+                                    <p className='m-0' >{dt.FirstName}</p> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p className='m-0 py-2'>{dt.lastName}</p> 
+                                    <p className='m-0 py-2'>{dt.LastName}</p> 
                                 </div>
                                 <div className='col-md-1' >
-                                    <p className='m-0'>{dt.telephone}</p> 
+                                    <p className='m-0'>{dt.Telephone}</p> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p className='m-0'>{dt.email}</p> 
+                                    <p className='m-0'>{dt.Email}</p> 
                                 </div>
                                 <div className='col-md-2' >
-                                    <p className='m-0'>{dt.manager}</p> 
+                                    <p className='m-0'>{dt.Manager}</p> 
                                 </div>
                                 <div className='col-md-1' >
-                                    <p className='m-0'>{dt.status}</p> 
+                                    <p className='m-0'>{dt.Status}</p> 
                                 </div>
                             </div> 
                             )
@@ -319,19 +321,12 @@ export const dataLoader = async ()=>{
 
     const employees = await res.json()    
     const departments = await dept.json() 
-    
-    employees.forEach(rsp => {
-        let manager = employees.filter((emp)=>{
-            return emp.departmentId === rsp.departmentId && emp.isManager
-        })
-        rsp["manager"] = `${manager[0].firstName} ${manager[0].lastName}`
-    });
-    
-    departments.forEach(dpt => {
-        let manager = employees.filter((emp)=>{
-            return dpt.managerId === emp.id 
-        })
-        dpt["manager"] = `${manager[0].firstName} ${manager[0].lastName}`
+
+    employees.forEach(emp => {
+        let department = departments.filter((dpt)=>{
+            return dpt.Id === emp.DepartmentId
+        })[0]
+        emp["Manager"] = department.Manager
     });
 
     const data = {
