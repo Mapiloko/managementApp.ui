@@ -3,8 +3,8 @@ import React, {useEffect, useState} from 'react'
 import CustomButton from '../../Helpers/CustomButton';
 import { useStyles } from "./styles";
 import { useNavigate } from 'react-router-dom';
-import SearchIcon from '@mui/icons-material/Search';
-import LoginStore from "../../utils/stores/EditStore";
+// import SearchIcon from '@mui/icons-material/Search';
+// import LoginStore from "../../utils/stores/EditStore";
 import Header from '../Header';
 import CreationStore from '../../utils/stores/CreationStore';
 import { getFromStore } from '../../utils/hooks/storage';
@@ -12,6 +12,10 @@ import { updateDepartmentStatus$ } from '../../api/departments';
 import { dataLoader } from '../EmployeeList';
 import Loader from '../Loader';
 import Pagination from '../../Helpers/Pagination';
+import RoleStore from '../../utils/stores/RoleStore';
+import useSubject from '../../utils/hooks/useSubject';
+import DialogBox from '../../Helpers/DialogBox';
+import { Roles } from '../../utils/Configs/Roles';
 
 export default function EmployeeList() {
 
@@ -19,6 +23,7 @@ export default function EmployeeList() {
     const navigate = useNavigate()
     const [searchTxt, setSearch] = useState("")
     let data = getFromStore("allData")
+    const user = getFromStore("User")
 
     const [Status, setStatus] = useState("0")
     const [open, setOpen] = useState(false);
@@ -118,21 +123,7 @@ export default function EmployeeList() {
             {loading &&
                 <Loader/>
             }
-            <Dialog
-                open={open}
-                onClose={handleClose}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-                >
-                <DialogTitle id="alert-dialog-title">
-                {dialogMessage}
-                </DialogTitle>
-                <DialogActions>
-                    <Button onClick={handleClose} autoFocus>
-                        Okay
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <DialogBox open={open} handleClose={handleClose} dialogMessage={dialogMessage} />
             <Grid container spacing={2}>
                 <Grid item  xs={12}>
                     <Typography className={classes.screen} variant='h4' color="white" >Departments</Typography> 
@@ -143,8 +134,8 @@ export default function EmployeeList() {
                         
                         <Grid className={classes.menuBtns} >
                             <Button fullWidth className='mb-2' variant="contained" onClick={()=> navigate("/employees-list") } >Go to Employees</Button>
-                             <Button fullWidth className='mb-2' variant="contained" onClick={()=> createNavigate("createE") } >Create Employee</Button>
-                            <Button fullWidth className='mb-2'variant="contained" onClick={()=> createNavigate("createD") } >Create Department</Button>
+                             <Button fullWidth className='mb-2' variant="contained" disabled={ user.Role !== Roles.admin } onClick={()=> createNavigate("createE") } >Create Employee</Button>
+                            <Button fullWidth className='mb-2'variant="contained" disabled={ user.Role !== Roles.admin } onClick={()=> createNavigate("createD") } >Create Department</Button>
                         </Grid>
                     </Grid>
                 </Grid>
@@ -218,10 +209,13 @@ export default function EmployeeList() {
                             return (
                             <div key={index} className="row" >
                                 <div className='col-3' >
+                                {user.Role !== Roles.admin ?
+                                    <Typography className='ps-2'>No Action</Typography> :
                                     <>
                                         <Link onClick={()=>editHandler(dt.Id)} className="ps-2" role="button" >Edit </Link> 
                                         <Link onClick={()=>actionHandler(dt.Id)} role="button">{dt.Status === "Active"? "Deactivate": "Activate"}</Link>
                                     </>  
+                                    }
                                 </div>
                                 <div className='col-3' >
                                     <p>{dt.Name}</p> 

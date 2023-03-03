@@ -3,20 +3,26 @@ import React, {useEffect, useState} from 'react'
 import CustomButton from '../../Helpers/CustomButton';
 import { useStyles } from "./styles";
 import { 
-    useLoaderData, useNavigation, 
+    useLoaderData, 
     useNavigate } from 'react-router-dom';
 // import SearchIcon from '@mui/icons-material/Search';
 import Header from '../Header';
 import CreationStore from '../../utils/stores/CreationStore';
 import { getFromStore, setToStore } from '../../utils/hooks/storage';
 import { editEmployeeStatus$, getEmployeesData$ } from '../../api/employees';
-import { getDepartmentManager$, getDepartmentsData$ } from '../../api/departments';
+import { getDepartmentsData$ } from '../../api/departments';
 import Loader from '../Loader';
 import Pagination from '../../Helpers/Pagination';
+import RoleStore from '../../utils/stores/RoleStore';
+import useSubject from '../../utils/hooks/useSubject';
+import DialogBox from '../../Helpers/DialogBox';
+import {Roles} from '../../utils/Configs/Roles';
 
 
 export default function EmployeeList() {
     let data = useLoaderData()
+    const user = getFromStore("User")
+    
     const navigate = useNavigate()
     const classes = useStyles()
     const [searchTxt, setSearch] = useState("")
@@ -134,21 +140,7 @@ export default function EmployeeList() {
             {loading &&
                 <Loader/>
             }
-            <Dialog
-                open={open}
-                onClose={handleClose}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-                >
-                <DialogTitle id="alert-dialog-title">
-                {dialogMessage}
-                </DialogTitle>
-                <DialogActions>
-                    <Button onClick={handleClose} autoFocus>
-                        Okay
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <DialogBox open={open} handleClose={handleClose} dialogMessage={dialogMessage} />
             <Grid container spacing={2}>
                 <Grid item  xs={12}>
                     <Typography className={classes.screen} variant='h4' color="white" >Employees</Typography> 
@@ -159,8 +151,8 @@ export default function EmployeeList() {
                         
                         <Grid className={classes.menuBtns} >
                             <Button fullWidth className='mb-2' variant="contained"  onClick={()=> navigate("/department-list") }>Go to Departments</Button>
-                            <Button fullWidth className='mb-2' variant="contained" onClick={()=> createNavigate("createE") } >Create Employee</Button>
-                            <Button fullWidth className='mb-2'variant="contained" onClick={()=> createNavigate("createD") } >Create Department</Button>
+                            <Button fullWidth className='mb-2' variant="contained" disabled={ user.Role !== Roles.admin } onClick={()=> createNavigate("createE") } >Create Employee</Button>
+                            <Button fullWidth className='mb-2'variant="contained"disabled={ user.Role !== Roles.admin } onClick={()=> createNavigate("createD") } >Create Department</Button>
                         </Grid>
                     </Grid>
                 </Grid>
@@ -277,10 +269,13 @@ export default function EmployeeList() {
                             return (
                             <div key={index} className="row" >
                                 <div className='col-md-2' >
+                                    {user.Role == Roles.manager && user.UserName !== dt.Email ?
+                                    <Typography className='ps-2'>No Action</Typography> :
                                     <>
                                         <Link onClick={()=>editHandler(dt.Id)} className="ps-2" role="button" >Edit </Link> 
                                         <Link onClick={()=>actionHandler(dt.Id)} role="button">{dt.Status === "Active"? "Deactivate": "Activate"}</Link>
                                     </> 
+                                    }
                                 </div>
                                 <div className='col-md-2' >
                                     <p className='m-0' >{dt.FirstName}</p> 
@@ -303,6 +298,7 @@ export default function EmployeeList() {
                             </div> 
                             )
                         })
+
                     }
                 </div>
             </div>
@@ -316,13 +312,23 @@ export default function EmployeeList() {
 }
 
 export const dataLoader = async ()=>{
+
+    const user = getFromStore("User")
+    
     const res = await getEmployeesData$()
     const dept = await getDepartmentsData$();
     
-    const employees = await res.json()    
+    let employees = await res.json()    
     const departments = await dept.json() 
-    
     let data;
+    
+    if(user.Role === Roles.employee)
+    {
+        employees = employees.filter((dt)=>{
+            return dt.Email === user.UserName
+        })
+    }
+
     if( departments.Message === "No content")
     {
         data = { employees: [], departments: []}

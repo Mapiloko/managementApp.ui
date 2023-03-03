@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useStyles } from "./styles";
 import Loader from "../Loader";
 import { setToStore } from "../../utils/hooks/storage";
+import RoleStore from "../../utils/stores/RoleStore";
 import { Login$ } from "../../api/accounts";
 
 
@@ -26,7 +27,7 @@ const Login = () => {
 		setLoading(true)
 		Login$(body).then(async (res)=>{
 			const response = await res.json()
-			setToStore("Token", response.Token)
+			setToStore("User", response)
 			navigate("/employees-list")
 		}).catch((err)=>{
 			console.log("Error", err)
@@ -56,7 +57,7 @@ const Login = () => {
 						</Grid>
 
 						<Grid item xs={10} className={classes.submitBtn}>
-							<CustomButton handleClick={ handleClick } className={classes.Button} title="Login"/>
+							<CustomButton disabled={password.length === 0 || userName.length === 0} handleClick={ handleClick } className={classes.Button} title="Login"/>
 						</Grid>
 						{ wrongLogins &&
 							<Typography className={classes.forgotPassword} variant="h6" color="red" align="center">Incorrect Username or Password</Typography>

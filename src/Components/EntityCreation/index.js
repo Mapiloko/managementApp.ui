@@ -12,12 +12,15 @@ import { createDepartment$, updateDepartment$ } from '../../api/departments.js';
 import Loader from '../Loader';
 import CustomButton from '../../Helpers/CustomButton';
 import { updateRole$ } from '../../api/accounts';
+import RoleStore from '../../utils/stores/RoleStore';
+import DialogBox from '../../Helpers/DialogBox';
 
 
 export default function EntityCreate() {
     let data = getFromStore("allData")
+    const role = useSubject(RoleStore);
     const navigate = useNavigate()
-    const navigation = useNavigation()   
+
     const route = useSubject(CreationStore)
     const { category, subCat, id } = useParams();
     const [name, setName] = useState("")
@@ -37,9 +40,7 @@ export default function EntityCreate() {
     const [validEmail, setValidEmail] = useState(true);
     const [validTelephone, setValTelephone] = useState(true);
     const [validSave, setValidSave] = useState(true);
-
-
-
+    const [errorFound, setErrors] = useState(false);
 
     const classes = useStyles()
 
@@ -68,20 +69,28 @@ export default function EntityCreate() {
             setManagerId(mngr[0]?.Id)
         }
         else{
-            let mngr
-            if(category === "department")
+            // let mngr
+            // if(category === "department")
+            // {
+            //     mngr = data.employees.filter((emp)=>{
+            //         return emp.Role !== "Manager"
+            //     })[0]
+            // }
+            // else
+            if(category === "employee")
             {
-                mngr = data.employees.filter((emp)=>{
-                    return emp.Role !== "Manager"
-                })[0]
+                let mngr = data.employees.filter((emp)=>{
+                    return emp.Role === "Manager"
+                    })[0]
+    
+                setManager([mngr])
+    
+                if(data.departments.filter((dpt)=>{
+                    return dpt.Manager === "Not Assigned" 
+                })[0] == undefined)
+                    setManagerId(mngr?.Id)
             }
-            else
-            mngr = data.employees.filter((emp)=>{
-                return emp.Role === "Manager"
-                })[0]
 
-            setManager([mngr])
-            setManagerId(mngr?.Id)
         }
     } 
 
@@ -126,23 +135,24 @@ export default function EntityCreate() {
         
         setLoading(true) 
         let body={}
+        let currentManager;
+        let department;
         
-        let currentManager = data.employees.filter((emp)=>{
-            return emp.Id === managerId
-        })[0]
-
-        let department = data.departments.filter((dpt)=>{
-            return dpt.Id === currentManager?.DepartmentId 
-        })[0]
-
-        if(department === undefined && data.departments.length > 0) 
+        if(managerId === 0)
         {
             department = data.departments.filter((dpt)=>{
                 return dpt.Manager === "Not Assigned" 
             })[0]
-
-            if(department === undefined)
-                department = data.departments[0]
+        }
+        else
+        {
+            currentManager = data.employees.filter((emp)=>{
+                return emp.Id === managerId
+            })[0]
+    
+            department = data.departments.filter((dpt)=>{
+                return dpt.Id === currentManager?.DepartmentId 
+            })[0]
         }
         
         if(subCat === "create")
@@ -155,21 +165,29 @@ export default function EntityCreate() {
                     Telephone: telephone,
                     DepartmentId: department?.Id,
                     Status: "Active",
-                    Role: "Manager",
+                    Role: managerId === 0? "Manager" : "Employee",
                     Email: email    
                 }
 
                 createEmployee$(body).then(async (res)=>{
-                    console.log("employee created")
-                    setMessage(`Employee "${name} ${surname}" Created`)
+                    const resp = await res.json()
                     setName("")
                     setSurname("")
                     setTelephone("")
                     setEmail("")
-                    data = await dataLoader() 
-                    // startConfigs()
+                    setMessage(`Employee "${name} ${surname}" Created`)
                     setLoading(false)
-                    setOpen(true) 
+                    if(resp.StatusCode === 205)
+                    {
+                        setErrors(true)
+                        setTimeout(() => {
+                            setErrors(false)
+                        }, 7000);
+                    }
+                    else
+                        setOpen(true) 
+                    data = await dataLoader()
+                    startConfigs() 
                 }).catch(er=>{ 
                     setLoading(false)
                     console.log("Got some Error",er)
@@ -187,7 +205,7 @@ export default function EntityCreate() {
                     setName("")
                     const response = await res.json()
 
-                    if(currentManager !== undefined || department !== undefined)
+                    if(currentManager !== undefined)
                     {
                         const resp = await updateRole$({ UserName: currentManager.Email, RoleName: "Manager"})
                         const res1 = await updateEmployeeDepartment({DepartmentId: response.Id}, currentManager.Id)
@@ -246,7 +264,7 @@ export default function EntityCreate() {
                     setName("")
                     setLoading(false)
                     setOpen(true)
-                    if(manager[0].id !== currentManager.id)
+                    if(manager[0]?.id !== currentManager?.id)
                     {
                         const res = await updateRole$({ UserName: currentManager.Email, RoleName: "Manager"})
                     } 
@@ -337,21 +355,7 @@ export default function EntityCreate() {
         {loading &&
             <Loader/>
         }
-        <Dialog
-            open={open}
-            // onClose={handleClose}
-            aria-labelledby="alert-dialog-title"
-            aria-describedby="alert-dialog-description"
-        >
-            <DialogTitle id="alert-dialog-title">
-            {dialogMessage}
-            </DialogTitle>
-            <DialogActions>
-                <Button onClick={()=> setOpen(false)} autoFocus>
-                    Okay
-                </Button>
-            </DialogActions>
-        </Dialog>
+        <DialogBox open={open} handleClose={()=> setOpen(false)} dialogMessage={dialogMessage} />
         <Grid container spacing={2}>
             <Grid item  xs={3}>
                 <Grid className={`${classes.divBorderStart} justify-content-center`}>
@@ -425,8 +429,16 @@ export default function EntityCreate() {
                             setManagerId(parseInt(e.target.value))
                         }} 
                         className="form-select" aria-label="Default select example">
+                        {data.departments.filter((dpt)=>{
+                                return dpt.Manager === "Not Assigned" 
+                        })[0] !== undefined && subCat === "create" && category === "employee" &&
+                            <option value={0}>Own Manager</option>
+                        }
                         {subCat === "edit" && manager.length !== 0 && 
                             <option key={manager[0].Id} value={manager[0].Id}>{`${manager[0].FirstName} ${manager[0].LastName} (Current manager)`}</option>
+                        }
+                        {subCat === "create" && category === "department" && 
+                            <option value={0}>No Manager</option>
                         }
                         {
                             data.employees.filter((dta)=>{
@@ -460,6 +472,11 @@ export default function EntityCreate() {
                 }
             </Grid>
         </Grid>
+        {errorFound && 
+            <Grid className="blinkm">
+                <Typography align='center' className="blink_text" color="red" variant='h5' >User with Same Username Found, Use Different Username!!!</Typography>
+            </Grid>
+        }
         <Grid container>
             <Grid item md={9}>
             </Grid>
