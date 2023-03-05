@@ -1,25 +1,25 @@
-import { Grid, Typography, Button, Dialog, DialogActions, DialogTitle } from '@mui/material'
+import { Grid, Typography, Button } from '@mui/material'
 import React, {useEffect, useState} from 'react'
 import { useStyles } from "./styles";
 import CreationStore from '../../utils/stores/CreationStore';
 import useSubject from '../../utils/hooks/useSubject';
-import { useParams, useNavigate, useNavigation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../Header';
 import { getFromStore } from '../../utils/hooks/storage';
 import { dataLoader } from '../EmployeeList';
-import { createEmployee$, updateEmployee$, updateEmployeeDepartment, editEmployeeRole$ } from '../../api/employees';
+import { createEmployee$, updateEmployee$, updateEmployeeDepartment } from '../../api/employees';
 import { createDepartment$, updateDepartment$ } from '../../api/departments.js';
 import Loader from '../Loader';
 import CustomButton from '../../Helpers/CustomButton';
 import { updateRole$ } from '../../api/accounts';
-import RoleStore from '../../utils/stores/RoleStore';
 import DialogBox from '../../Helpers/DialogBox';
+import { Roles } from '../../utils/Configs/Roles';
 
 
 export default function EntityCreate() {
     let data = getFromStore("allData")
-    const role = useSubject(RoleStore);
     const navigate = useNavigate()
+    const user = getFromStore("User")
 
     const route = useSubject(CreationStore)
     const { category, subCat, id } = useParams();
@@ -69,14 +69,6 @@ export default function EntityCreate() {
             setManagerId(mngr[0]?.Id)
         }
         else{
-            // let mngr
-            // if(category === "department")
-            // {
-            //     mngr = data.employees.filter((emp)=>{
-            //         return emp.Role !== "Manager"
-            //     })[0]
-            // }
-            // else
             if(category === "employee")
             {
                 let mngr = data.employees.filter((emp)=>{
@@ -87,7 +79,7 @@ export default function EntityCreate() {
     
                 if(data.departments.filter((dpt)=>{
                     return dpt.Manager === "Not Assigned" 
-                })[0] == undefined)
+                })[0] === undefined)
                     setManagerId(mngr?.Id)
             }
 
@@ -101,7 +93,7 @@ export default function EntityCreate() {
     useEffect(()=>{
         if(id && data && !edit)
         {
-            if(subCat == "edit")
+            if(subCat === "edit")
             {
                 if(category === "employee")
                 {
@@ -364,8 +356,8 @@ export default function EntityCreate() {
                     <Grid className={classes.menuBtns} >
                         <Button fullWidth className='mb-3' variant="contained" onClick={()=> navigate("/employees-list") }>Go to Employees</Button>
                         <Button fullWidth className='mb-3' variant="contained"  onClick={()=> navigate("/department-list") }>Go to Departments</Button>
-                        <Button fullWidth className='mb-3' variant="contained" disabled={ category === "employee" && subCat === "create"} onClick={()=> createNavigate("createE") } >Create Employee</Button>
-                        <Button fullWidth className='mb-3'variant="contained" disabled={ category === "department" && subCat === "create"} onClick={()=> createNavigate("createD") } >Create Department</Button>
+                        <Button fullWidth className='mb-3' variant="contained" disabled={ (category === "employee" && subCat === "create") || user.Role !== Roles.admin} onClick={()=> createNavigate("createE") } >Create Employee</Button>
+                        <Button fullWidth className='mb-3'variant="contained" disabled={ (category === "department" && subCat === "create") || user.Role !== Roles.admin} onClick={()=> createNavigate("createD") } >Create Department</Button>
                     </Grid>
                 </Grid>
             </Grid>

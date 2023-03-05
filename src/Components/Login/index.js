@@ -20,6 +20,7 @@ const Login = () => {
 	const [password, setPassword] = useState("")
 	const [loading, setLoading] = useState(false)
 	const [wrongLogins, setWronglogins] = useState(false)
+	const [netError, setNetError] = useState(false)
 
 	const handleClick = ()=>{
 		const body = { UserName: userName, Password: password}
@@ -40,7 +41,12 @@ const Login = () => {
 				navigate("/employees-list")
 			}
 		}).catch((err)=>{
-			console.log("Error", err)
+			setLoading(false)
+			setNetError(true)
+			setTimeout(() => {
+				setNetError(false)
+			}, 7000);
+			console.log("Network Error", err)
 		})
 	}
 
@@ -69,8 +75,10 @@ const Login = () => {
 						<Grid item xs={10} className={classes.submitBtn}>
 							<CustomButton disabled={password.length === 0 || userName.length === 0} handleClick={ handleClick } className={classes.Button} title="Login"/>
 						</Grid>
-						{ wrongLogins &&
-							<Typography className={`${classes.forgotPassword} blink_text`} variant="h6" color="red" align="center">Incorrect Username or Password</Typography>
+						{ wrongLogins ?
+							<Typography className={`${classes.forgotPassword} blink_text`} variant="h6" color="red" align="center">Incorrect Username or Password</Typography>:
+							netError &&
+							<Typography className={`${classes.forgotPassword} blink_text`} variant="h6" color="red" align="center">Network Error!!</Typography>
 						}
 					</Grid>
 				</Grid>

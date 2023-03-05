@@ -5,7 +5,8 @@ import EmployeeList, { dataLoader } from './Components/EmployeeList';
 import DepartmentList from './Components/DepartmentList';
 import EntityCreate from './Components/EntityCreation';
 import { createBrowserRouter, createRoutesFromElements, Route, Outlet, RouterProvider } from 'react-router-dom';
-import ProtectedRoutes from './utils/hooks/ProtectedRoutes';
+import ProtectedRoutes from './utils/hooks/ProtectedRoutes/ProtectedRoutes';
+import AdminRoutes from './utils/hooks/ProtectedRoutes/AdminRoutes';
 
 const Root = () =>{
   return (
@@ -23,7 +24,9 @@ const router = createBrowserRouter(
       <Route element={<ProtectedRoutes /> } >
         <Route path="employees-list" element={<EmployeeList/>} loader={dataLoader} />
         <Route path="department-list" element={<DepartmentList/>} />
-        <Route path="/:category/:subCat" element={<EntityCreate/>} />
+        <Route element={<AdminRoutes/> }>
+          <Route path="/:category/:subCat" element={<EntityCreate/>} />
+        </Route>
         <Route path="/:category/:subCat/:id" element={<EntityCreate/>} />
       </Route>
       {/* <Route element={<Login/>} /> */}

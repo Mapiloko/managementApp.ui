@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { getFromStore } from './storage';
+import { getFromStore } from '../storage';
 
 const useAuth = ()=> {
     const user = getFromStore("User");
