@@ -16,8 +16,8 @@ const Login = () => {
 	const navigate = useNavigate();
 	LoginStore.next(false)
 	const classes = useStyles()
-	const [userName, setUsername] = useState("hradmin@test.com")
-	const [password, setPassword] = useState("TestPass1234")
+	const [userName, setUsername] = useState("")
+	const [password, setPassword] = useState("")
 	const [loading, setLoading] = useState(false)
 	const [wrongLogins, setWronglogins] = useState(false)
 
@@ -27,8 +27,18 @@ const Login = () => {
 		setLoading(true)
 		Login$(body).then(async (res)=>{
 			const response = await res.json()
-			setToStore("User", response)
-			navigate("/employees-list")
+			if(response.StatusCode === 401)
+			{
+				setLoading(false)
+				setWronglogins(true)
+				setTimeout(() => {
+					setWronglogins(false)
+				}, 7000);
+			}
+			else{
+				setToStore("User", response)
+				navigate("/employees-list")
+			}
 		}).catch((err)=>{
 			console.log("Error", err)
 		})
@@ -60,7 +70,7 @@ const Login = () => {
 							<CustomButton disabled={password.length === 0 || userName.length === 0} handleClick={ handleClick } className={classes.Button} title="Login"/>
 						</Grid>
 						{ wrongLogins &&
-							<Typography className={classes.forgotPassword} variant="h6" color="red" align="center">Incorrect Username or Password</Typography>
+							<Typography className={`${classes.forgotPassword} blink_text`} variant="h6" color="red" align="center">Incorrect Username or Password</Typography>
 						}
 					</Grid>
 				</Grid>
